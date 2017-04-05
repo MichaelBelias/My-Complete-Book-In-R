@@ -1,0 +1,17 @@
+In today's lab, we are going to review the construction and interpretation of 
+parametric models, including exponential and Weibull models. Also, we are going to 
+see how these models are fitted using \verb|R|. We will use the same example as in 
+the lecture, the nursing home dataset (\emph{nurshome.csv}). 
+\begin{enumerate}[(i)]
+\item Fit an exponential model focusing on the effect of gender on length of stay using the function \verb|survreg| (examine \verb|?survreg| in depth). Compare the results with those obtained by a Cox PH model. Why do you think there is an opposite sign between the results?
+\item Compare graphically the survival curves predicted by the exponential model with the KM estimates.
+\item Fit a Weibull model to the same data. See how well the Weibull model fits by comparing the predicted survival estimates to the KM survival estimates. Which model do you think fits better? 
+\item Evaluate if the Weibull model could be appropriate for the data by using a log cumulative hazard plot as shown in the lecture.
+\item Calculate the mean and median length of stay for each gender according to the 
+exponential and Weibull model.
+\item \textbf{Optional:} 
+\begin{itemize}
+\item Construct a function in \verb|R| in order to compute the loglikelihood of the Weibull model. Then compute the loglikelihood at the maximum likelihood estimates obtained by \verb|survreg|. Is there any difference with the loglikelihood provided by \verb|survreg|.
+\item Maximize the likelihood of the Weibull model using a Newton Raphson approach. \textbf{Hint}: You can have the \verb|nlm| function do the job for you (see \verb|?nlm|). 
+\end{itemize}
+\end{enumerate}

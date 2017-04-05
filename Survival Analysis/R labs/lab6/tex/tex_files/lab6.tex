@@ -1,0 +1,78 @@
+Today, we are going to understand the Collet’s approach for model selection within the 
+context of a proportional hazards model and to assess the overall fit of the model by 
+checking the residuals. 
+\begin{enumerate}[(a)]
+ \item \textbf{\underline{Collet’s Approach for Model Selection:}} We are going to work with the MAC dataset (\emph{mac.csv}), focusing on the outcome 
+\emph{dthstat} which equals 1 if a patient died and 0 otherwise. The time to death is 
+\emph{dthtime}, and subjects who did not die are censored at their time of study 
+discontinuation. 
+The covariates of interest for the purpose of this lab are:
+\begin{align}
+\text{\textbf{\emph{agecat sex cd4 karnof 
+ivdrug antiret rif clari}}} \nonumber
+\end{align}
+This time we are 
+interested in the time to death, and thus, to specify the survival time along with the failure indicator, you have to use \verb|Surv(dthtime,dthstat)|.
+\begin{enumerate}[Step 1:]
+\item Fit univariate models to choose candidate predictors. Use criterion of $p\leq 0.15$ in order to identify predictors, and fill in the following table:
+\begin{table}[ht]
+\caption{Univariate models of interest for the Mac study.}
+% title of Table
+\centering
+% used for centering table
+\begin{tabular}{c c c c c}
+% centered columns (4 columns)
+\hline
+Predictor & Estimate & SE & Pvalue & HR \\ \hline
+agecat  &&&&  \\   
+sex     &&&&  \\
+cd4     &&&&  \\
+karnof  &&&&  \\   
+ivdrug  &&&&  \\   
+antiret &&&&  \\    
+rif     &&&&  \\
+clari   &&&&  \\
+\hline
+\end{tabular}
+\label{table:1}
+\end{table}
+Is the effect of treatment significant?
+\item \begin{enumerate}[(i)]
+\item Fit a multivariate model with all significant predictors ($p\leq0.15$) from Step 1.
+\item Then use backward selection to eliminate non-significant predictors in a multivariate framework using the AIC criterion.
+\end{enumerate}
+\item Use forward selection to add any variables not significant at Step 1 to the multivariate 
+model obtained at the end of Step 2. Remember to force the variables that were significant at the end of Step 2 into the model. Also, you should examine the significance of a categorical variable with $\geq$ 2 levels simultaneously. Are there any other variables added to the model?
+\item  
+\begin{enumerate}[(i)]
+\item Do final pruning of the main-effects model using forward stepwise
+regression. 
+
+\item Then, create all possible 2-way interaction terms based on the main effects of your last model. Add these to a multivariate model and use a backward stepwise selection 
+procedure to eliminate those considered not significant by the \emph{AIC} criterion. Use the hierarchical principle when considering the significance of the interaction terms of your model.
+\end{enumerate}
+\item Consider alternate 
+coding of the following covariates:
+\begin{enumerate}[(i)]
+\item Use \emph{cd4cat} instead of \emph{cd4}.
+\item Use \emph{age} instead of \emph{agecat}.
+\end{enumerate}
+\item Among the models we have fitted so far, which one seems best in terms of the \emph{AIC} criterion?
+\end{enumerate}
+\item For the purposes of this lab, let's assess the fit of the model that includes the variables: \emph{age}, \emph{sex}, \emph{cd4}, \emph{karnof} and \emph{antiret}, by checking the residuals:
+\begin{enumerate}[(i)]
+\item Use the Cox-Snell residuals to examine the overall fit of the model.
+\item Get the Martingale residuals and plot them versus the predicted $\log HR_{i}$ (i.e. $\mathbf{z}_{i}^{T}\hat{\boldsymbol{\beta}}$).
+\item One problem with the martingale residuals
+is that they tend to be asymmetric.
+A solution is to use deviance residuals. Get the deviance residuals in \verb|R| and plot them against the predicted $\log HR_{i}$ and the other covariates of your model.
+\item Check the proportional hazards assumption by plotting the Weighted Schoenfeld residuals (for each regressor) against time.
+\item \textbf{Optional (but important):} Investigate the functional form required for CD4. Based on Collet (page 127), the following algorithm can be used to assess this aspect of model adequacy:
+\begin{itemize}
+\item Fit a Cox PH model without CD4 and obtain the martingale residuals.
+\item Obtain the CD4 residuals after regressing on the other covariates (i.e, \emph{age}, \emph{sex}, \emph{karnof} and \emph{antiret}), using a linear regression model.
+\item Plot the martingale residuals against the CD4 residuals, superimposing some smoothed curve to help the interpretation of the plot. Then, this plot should display the correct functional form required for CD4.
+\end{itemize}
+Comment on the plot. Are happy with the linearity assumption we have made so far? Is there any transformation of CD4 you would suggest based on this graph?
+\end{enumerate}
+\end{enumerate}

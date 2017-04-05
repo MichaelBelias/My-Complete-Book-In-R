@@ -1,0 +1,16 @@
+Consider the following data from the Ohio State University Bone Marrow Transplant Unit
+on the time to death or relapse (in months) after bone marrow transplant for 12 patients
+with non-Hodgkin’s lymphoma. For the purposes of this exercise, assume that there are no
+censored event times.
+\begin{align}
+1,\ 2,\ 2,\ 2,\ 3,\ 5,\ 6,\ 7,\ 8,\ 16,\ 17,\ 34. \nonumber
+\end{align}
+
+\begin{enumerate}[(a)]
+ \item Using the above data, calculate the empirical estimate of the survival function,
+ $\hat{S}(t^{+})$, by hand. Summarize your calculations in a table containing the survival times, the number of deaths at each time point, and $\hat{S}(t^{+})$. Use your own \verb!R! code to verify your calculations.
+ \item Use the \verb|survfit| function to verify your results.
+ \item Use the \verb|plot| function to produce a graph of the estimated survival function.
+ \item Show how the estimated standard error is calculated for $t=6^{+}$.
+ \item Identify the estimated median survival. 
+\end{enumerate}

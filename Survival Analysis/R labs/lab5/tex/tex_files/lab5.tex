@@ -1,0 +1,35 @@
+Today, we are going to see how to construct confidence intervals and tests for hazard
+ratios, and compare nested models using likelihood ratio tests. Then
+we are going to learn how to estimate the baseline survival function and predicted
+medians.
+\begin{enumerate}[(a)]
+ \item \textbf{\underline{C.I., Wald test and Likelihood Ratio test: MAC Dataset.}} The mac study was a randomized clinical trial to study the effects of
+combination regimens on prevention of MAC (\emph{mycobacterium
+avium complex}), one of the most common OIs in AIDS patients. There were 3 regimens
+\begin{itemize}
+\item clarithromycin (new)
+\item rifabutin (standard)
+\item clarithromycin plus rifabutin
+\end{itemize}
+Here, we are interested in the time to MAC disease and not in time to death.
+\begin{enumerate}[(i)]
+\item Import the data into \verb|R|. Have a look at the dataset. Fit a Cox PH model focusing on the effects of the Karnofsky score and treatment type on time to MAC disease. What is the hazard ratio of the Karnofsky score status? What is the interpretation 
+of this hazard ratio?
+\item Construct a 95\%CI for the estimated hazard ratio in (i). Interpret your result. 
+\item Test the effect of the Karnofsky score using a Wald test. State your null and 
+alternative hypothesis. What do you conclude?
+\item Try to improve the model fit by adding the CD4 cell count as a covariate. Calculate the appropriate likelihood ratio test. What do you conclude from this result?
+\item Conduct an overall test of the treatment effect
+adjusted for the Karnofsky score and CD4 levels, using a multivariate Wald test.
+\item Test whether there is a difference between the 
+rifabutin and clarithromycin treatment arms after adjusting for the Karnofsky score and CD4 count.
+\end{enumerate}
+\newpage
+\item \textbf{\underline{Survival Function and Predicted Medians: Nursing Home Data.}} We are going to consider again the dataset \emph{nurshome.csv}. 
+\begin{enumerate}[(i)]
+\item Import the data into \verb|R|. Fit a Cox PH model focusing on the effects of marital and health status on length of stay using the \verb|coxph| function.
+\item Calculate the median length of stay for the following groups: (1) Single and healthy, (2) Single and unhealthy, (3) Married and healthy, and (4) Married and unhealthy, using a KM approach.
+\item Calculate the medians again after taking advantage of the Cox model you fitted in (i). The \verb|survfit| function would be very useful for doing this. Which options are available for estimating the baseline survival function? Which estimator did you actually use? Which subgroup has the longest length of stay?
+\item \textbf{Optional:} Write your own \verb|R| code to estimate the baseline survival function using the \emph{Breslow} estimator of the baseline cumulative hazard. Verify the results using the function \verb|survfit| with the appropriate option. Are the results identical? 
+\end{enumerate}
+\end{enumerate}

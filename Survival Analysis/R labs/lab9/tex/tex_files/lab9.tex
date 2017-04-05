@@ -1,0 +1,32 @@
+\begin{enumerate}[(a)]
+\item In today's lab, we are going to get familiar with time-dependent covariates. We will
+use the Stanford heart transplant dataset (\emph{stanford.csv}). In this study 103 patients waiting
+for a heart transplant were followed for survival. Here is a description of the file:\\
+\textbf{\emph{Patid}} - Patient Identifier \\
+\textbf{\emph{Year}} - Year of Acceptance \\
+\textbf{\emph{Age}} - Age \\
+\textbf{\emph{Fail}} - Survival Status (1=dead) \\
+\textbf{\emph{Time}} -  Survival time (correction for id=38) \\
+\textbf{\emph{Surgery}} - Surgery (e.g. CABG) \\
+\textbf{\emph{Transplant}} - Heart transplantation status (1=yes) \\
+ \textbf{\emph{Waitime}} - Waiting time for transplant
+\begin{enumerate}[(i)]
+\item Suppose that one tries to evaluate the effect of transplantation on the hazard of death by considering the transplantation status as a fixed binary covariate. Why do you think such an approach would be invalid?
+Perform this naive analysis in R using a conventional Cox model.
+\item According to (Crowley \& Hu, 1977) a solution to this problem is to introduce a time-updated covariate $z(t)$ such that $z(t) = \begin{cases}
+1, \ \text{if} & t>T_{o} \\
+0, \ \text{if} & t\leq T_{o}
+\end{cases}$, where $T_{o}$ is the time of transplantation. In other words, carry out an analysis involving the transplantation status as a time dependent covariate. To do this, you need to transform the dataset by creating multiple lines per subject. Then fit a Cox model with the time-updated transplantation status as a covariate. Interpret the result. 
+\end{enumerate}
+\item Another similar concept is the concept of time dependent effects. Suppose you are not happy with the proportionality assumption on some covariate and you want to adjust your results for this. One solution to the problem is to allow the effect of interest to vary over time (e.g., including an interaction with time). Consider the leukemia remission study described in lab 3.
+\begin{enumerate}[(i)]
+\item Check the PH assumption for the treatment groups using a log cumulative hazard plot. Comment on the plot
+\item Suppose that you would like to allow the log hazard ratio to vary linearly over time. Do you think the model
+\begin{small}
+\begin{verbatim}
+fit = coxph( Surv(weeks,remiss) ~ trt + I(weeks*(trt=="6-MP")),data = leukem)
+\end{verbatim}
+\end{small}
+would be appropriate? Answer based on your intuition. Then examine \verb|?coxph| in depth. How could you fit such a model? 
+\end{enumerate} 
+\end{enumerate}

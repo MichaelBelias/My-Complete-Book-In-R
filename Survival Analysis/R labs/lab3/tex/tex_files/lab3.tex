@@ -1,0 +1,25 @@
+In this lab, we are going to understand how to produce a Kaplan-Meier 
+plot of survival estimates for more than one subgroup on the same graph, and 
+compute a \emph{Logrank} or \emph{Wilcoxon} test in \verb|R|.
+\begin{enumerate}[(a)]
+ \item Using the following artificial data from two treatment groups
+ \begin{align}
+ \text{Group0:}\ 15, 18, 19, 19, 20 
+ \quad \text{Group1:}\ 16^{+}, 18, 20^{+}, 23, 24^{+}, \nonumber
+ \end{align}
+ compare the survival of the two groups by computing the \emph{Logrank} test using the \verb|survdiff| function in \verb|R|. What's your conclusion? \textbf{Optional:} Write an \verb|R| program to construct tables like that on page 22 of today's notes.
+ \item We are going to work on data from a leukemia remission study (Garrett 
+1997). The data consist of 42
+patients who are monitored over time to see how long (\emph{weeks}) it takes them to go out of remission
+(\emph{remiss}: 1 = yes, 0 = no). Half of 
+the patients received a new experimental drug and the other half received a 
+standard drug (\emph{trt}: 1=6-MP, 0=Control). This dataset is called \emph{leukem}.csv. Import the data in \verb|R|. Use the \verb|factor| function to encode the \verb|trt| variable as a factor (please, see ?\verb|factor| for more details).
+\begin{enumerate}[(i)]
+\item Use the \verb|survfit| function to get the KM estimates in both groups. After using information from (a), guess what the syntax would be.
+\item Plot the survival estimates of the two treatment groups using the 
+\verb|plot| function. Which group seems to be doing better? Comment on the graph.
+\item Compare the survival between the two groups in terms of the \emph{Logrank} and \emph{Wilcoxon} test using the \verb|survdiff| function. What do you conclude from these tests? Why do you think that there is a difference in the p-values of the two tests? Explain your opinion.
+\item How could you informally check the proportional hazards assumption? Any ideas?
+\end{enumerate}
+ 
+\end{enumerate}

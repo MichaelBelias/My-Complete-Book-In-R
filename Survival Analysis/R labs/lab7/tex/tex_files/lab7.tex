@@ -1,0 +1,11 @@
+In today's lab, we are going to evaluate the assumption of proportional hazards using 
+several graphical approaches. We will use the same example as in the lecture, the 
+nursing home dataset (\emph{nurshome.csv}). One way to assess the proportional hazards assumption is to produce a plot of $\log[-\log \hat{S}(t)]$ versus $\log(t)$ for each level of a covariate. If the lines (or curves) of the subgroups seem to be parallel, the PH assumption may be reasonable. 
+\begin{enumerate}[(i)]
+\item Carry out the above-mentioned procedure for gender and marital status separately (marginally), using the KM survival estimates. In addition, compare the raw KM estimates with the curves predicted by a Cox PH model. What can you say about the assumption of proportional hazards for gender and marital 
+status?
+\item We may also want to assess the proportionality assumption with several covariates. To do so, we can generate a new covariate that takes a different value for every 
+combination of covariate values. Of course, this is feasible only if there are enough data and a 
+couple of covariates. Produce an informative graph assessing the proportionality assumption for the combination of healthy and unhealthy men and women.
+\item  Include the marital and health status as covariates in a cox model stratified by gender. What assumptions do we impose on the covariate effects through the previous model? Assess the proportional hazards assumption for gender after adjusting for the marital and health status, based on a log-cumulative hazard plot (see \verb|?survfit.coxph|).
+\end{enumerate}

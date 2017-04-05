@@ -1,0 +1,19 @@
+For this lab, we will use the same data from the Ohio State University Bone Marrow 
+Transplant Unit on the time to death or relapse (in months) after bone marrow 
+transplant for 12 patients with non-Hodgkin's lymphoma. However, now the event 
+times that were actually censored are noted by “+”.
+\begin{align}
+1,\ 2,\ 2,\ 2^{+},\
+3,\ 5,\ 6,\ 7^{+},\ 8,\ 16^{+},\ 17,\ 34^{+}. \nonumber
+\end{align}
+\begin{enumerate}[(a)]
+ \item  Using the above data, calculate the KM estimate of the survival function, $S(t^{+})$, by hand. Summarize your calculations in a table with columns for $d_{j}$, $c_{j}$ and $r_{j}$. Import the data set \emph{nhl1} in \verb|R| and verify your calculations using the function \verb|survfit|. \textbf{Optional:} Get the number at risk from the object created by the \verb|survfit| function and write your own \verb|R| code to obtain the KM estimates.
+ \item Calculate the estimated standard error of the KM Survival estimate for times $t=1$ 
+and $t=3$ using the Greenwood's formula. Show how these standard errors are used in calculating the confidence intervals by \verb|R|. Use the \verb|plot| to produce a graph of the estimated survival function along with pointwise 95\%CIs using the \emph{log-log} approach.
+
+ \item Identify the estimated median, 25\%-ile and 75\%-ile survival time.
+ \item Find the \emph{Nelson-Aalen} estimator of the cumulative hazard function using the \verb|survfit| function. Produce a plot using the \verb|plot| function. One could use an exponential model for analysing these data. Do you think it would be appropriate? Justify your opinion.
+ \item An alternative estimator of survival when the data are grouped is the Lifetable estimator. Import the \emph{nurshome} dataset in \verb|R| (\emph{nurshome.csv}). Please have a look at the lecture 1 for the description of the dataset. Group the length of stay into 100 day intervals using the \verb|floor| function (see \verb|?floor|). Then construct a lifetable using the \verb|lifetab| function presented in package \verb|KMsurv|. You can download the package from CRAN by typing from the \verb|R| prompt \verb|install.packages("KMsurv")|. 
+ \item \textbf{Optional:} Construct an \verb|R| function to obtain KM estimates. Your function should accept the survival times along with the failure indicator as input, and it should return a data frame with the distinct survival times and the survival probabilities. Simulate 30 $\operatorname{lognormal}$ survival times with mean=-1 and sd=0.5 (on the log scale). To allow censoring, simulate random censoring times from the exponential distribution with a constant hazard rate 2, and find the failure indicator. Compare your results with those obtained from \verb|survfit|. Since both functions are computing exactly the same thing, the results should be identical, are they?
+ Use \verb|set.seed| for reproducibility.
+\end{enumerate}

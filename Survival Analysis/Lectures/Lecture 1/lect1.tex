@@ -1,0 +1,764 @@
+\documentclass[envcountsect, 10pt, portrait, palatino]{beamer}
+\usepackage{amsmath}
+\usepackage{color}
+\usepackage{listings}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Beamer packages %%%%%%%%%%%%%%%%%%%%%%%
+\usetheme{CambridgeUS}
+\usefonttheme[onlylarge]{structurebold}
+\setbeamerfont*{frametitle}{size=\normalsize,series=\bfseries}
+\setbeamertemplate{navigation symbols}{}
+
+\mode<presentation>{
+% XXX without this the number does not appear
+%\AtBeginDocument{\def\figurename{{\scshape Figure~\thesection.\thefigure}}}
+}
+% to number captions
+\setbeamertemplate{theorems}[ams style]
+\setbeamertemplate{caption}[numbered]
+%\setbeamertemplate{theorems}[numbered]
+%%%%%%%%%%%%%%%%%%%%%%%%%%%% title slide %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\title[]{Applied survival analysis}
+\author[Constantin T Yiannoutsos]
+{ Constantin T Yiannoutsos, Ph.D.}
+
+\date[]{\today}
+\newtheorem{defn}{Definition}[section]
+\newtheorem{assu}[defn]{Assumption}
+\newcommand{\simdot}{\stackrel{\cdot}{\sim}}
+\newcommand{\bfbeta}{{\mbox{\boldmath$\beta$}}}
+\newcommand{\bfep}{{\mbox{\boldmath$\epsilon$}}}
+\newcommand{\bhat}{\hat{\beta}}
+\newcommand{\btilde}{\tilde{\mbox{\boldmath$\beta$}}}
+\newcommand{\bfmu}{{\mbox{\boldmath$\mu$}}}
+\newcommand{\Var}{{\rm Var}}
+\newcommand{\Cov}{{\rm Cov}}
+\newcommand{\trt}{{\rm trt}}
+\newcommand{\pr}{{\rm pr}}
+\newcommand{\age}{{\rm age}}
+\newcommand{\Sin}{\sum_{i=1}^N}
+\newcommand{\Sjn}{\sum_{j=1}^N}
+\newcommand{\ui}{{\bf u}_i}
+\newcommand{\uj}{{\bf u}_j}
+\newcommand{\bfx}{{\mbox{{\bf x}}}}
+\newcommand{\bfp}{{\mbox{{\bf p}}}}
+\newcommand{\hbfp}{\widehat{\mbox{{\bf p}}}}
+\newcommand{\bfy}{{\mbox{{\bf y}}}}
+\newcommand{\bfY}{{\mbox{{\bf Y}}}}
+\newcommand{\bfZ}{{\mbox{{\bf Z}}}}
+\newcommand{\bfa}{{\mbox{{\bf a}}}}
+\newcommand{\bfb}{{\mbox{{\bf b}}}}
+\newcommand{\bfg}{{\mbox{{\bf g}}}}
+\newcommand{\bfU}{{\bf U}}
+\newcommand{\bfu}{{\mbox{{\bf u}}}}
+\newcommand{\bfz}{{\mbox{{\bf z}}}}
+\newcommand{\logit}{{\mbox{{logit}}}}
+\newcommand{\bfzero}{{\mbox{{\bf 0}}}}
+\newcommand{\hbeta}{{\widehat \beta}}
+\newcommand{\heta}{{\widehat \eta}}
+\newcommand{\hsigma}{{\widehat \sigma}}
+\newcommand{\hmu}{{\widehat \mu}}
+\newcommand{\hpi}{{\widehat \pi}}
+\newcommand{\cI}{{\cal I}}
+\newcommand{\bsigma}{{\bar \sigma}}
+\newcommand{\brho}{{\bar \rho}}
+\newcommand{\bx}{ {\bar {x} } }
+\newcommand{\bY}{ {\bar {Y} } }
+\newcommand{\hY}{ {\widehat {Y} } }
+\newcommand{\hp}{ {\widehat {p} } }
+\newcommand{\hVar}{ {\widehat {Var} } }
+
+\setlength{\baselineskip}{2.5em}
+% The main document
+\begin{document}
+\begin{frame}
+  \titlepage
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}{Survival Analysis: Introduction}
+  \tableofcontents
+\end{frame}
+\section{Introduction}
+\begin{frame}{Introduction}
+Survival Analysis typically focuses on {\bf time to event} data.
+In the most general sense, it consists of techniques for
+positive-valued random variables, such as
+
+\begin{itemize}
+\item time to death
+\item time to onset (or relapse) of a disease
+\item length of stay in a hospital
+\item duration of a strike
+\item money paid by health insurance
+\item viral load measurements
+\item time to finishing a doctoral dissertation!
+\end{itemize}
+\end{frame}
+\begin{frame}{Kinds of survival studies}
+Survival studies include:
+    \begin{itemize}
+    \item clinical trials
+    \item prospective cohort studies
+    \item retrospective cohort studies
+    \end{itemize}
+
+Typically, survival data are not fully observed, but rather are
+{\em censored}.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{frame}
+\begin{frame}{Goals of this course}
+In this course, we will:
+\begin{itemize}
+\item describe survival data
+\item compare survival of several groups
+\item explain survival with covariates
+\item design studies with survival endpoints
+\end{itemize}
+\end{frame}
+\begin{frame}{Some useful references}
+%\vspace{-0.2in}
+\begin{itemize}
+\item Collett: {\em Modelling Survival Data in Medical Research}
+\item Cox and Oakes: {\em Analysis of Survival Data}
+\item Kleinbaum: {\em Survival Analysis:  A self-learning text}
+\item Klein \& Moeschberger: {\em Survival Analysis:  Techniques for
+censored and truncated data}
+\item Cantor: {\em Extending SAS Survival Analysis Techniques for
+Medical Research}
+\item Allison: {\em Survival Analysis Using the SAS System}
+\end{itemize}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{frame}
+\section{Definitions and notation}
+\begin{frame}{Definitions and notation}
+Failure time random variables are always {\bf non-negative}.\\[2ex]
+That is, if we denote the failure time by $T$, then $T \ge 0$.
+\\[2ex]
+$T$ can either be {\bf discrete} (taking a finite set of values,
+e.g. $a_1,a_2,\ldots, a_n$) or {\bf continuous} (defined on
+$(0, \infty))$.
+\\[2ex]
+A random variable $X$ is called a {\bf censored failure time random
+variable} if $X = \min(T,U)$, where $U$ is a non-negative censoring
+variable.
+\end{frame}
+\begin{frame}{Defining a time random variable}
+In order to define a failure time random variable, we need:
+\begin{itemize}
+\item[(1)]  an unambiguous {\bf time origin} \\
+(e.g. randomization to clinical trial, purchase of car)\\
+\item[(2)]  a {\bf time scale} \\
+(e.g. real time (days, years), mileage of a car)\\
+\item[(3)]  definition of the {\bf event} \\
+(e.g. death, need a new car transmission)
+\end{itemize}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{frame}
+\begin{frame}{Illustration of survival data}
+\begin{center}
+\vspace*{-.2in}
+\begin{picture}(210,220)(-10,0)
+\thicklines
+\put(0,220){\line(0,-1){170}}
+%\put(0,230){\line(1,0){125}}
+%\put(125,228){\bf X}
+\put(10,215){\line(1,0){45}}
+\put(55,213){\bf X}
+\put(20,190){\line(1,0){155}}
+\put(175,190){\circle*{5}}
+\put(25,165){\line(1,0){10}}
+\put(35,165){\circle*{5}}
+\put(30,140){\line(1,0){100}}
+\put(130,137){\bf X}
+\put(40,115){\line(1,0){135}}
+\put(175,115){\circle*{5}}
+\put(45,90){\line(1,0){15}}
+\put(75,87){\bf X}
+\put(50,65){\line(1,0){80}}
+\put(130,65){\circle*{5}}
+\put(175,220){\line(0,-1){170}}
+\put(-10,40){study}
+\put(-10,33){opens}
+\put(165,40){study}
+\put(165,33){closes}
+\put(4,25){\circle*{10}}
+\put(8,23 ){  = censored observation}
+\put(0,12){{\bf X} = event}
+\end{picture}
+\end{center}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{frame}
+\begin{frame}{}
+The illustration of survival data on the previous page shows
+several features which are typically encountered in analysis
+of survival data:
+
+\begin{itemize}
+\item individuals do not all enter the study at the same time
+\item when the study ends, some individuals still haven't had
+the event yet
+\item other individuals drop out or get lost in the middle of
+the study, and all we know about them is the last time they
+were still ``free'' of the event
+\end{itemize}
+
+The first feature is referred to as {\bf ``staggered entry''}
+
+The last two features relate to {\bf ``censoring''} of the
+failure time events.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{frame}
+\section{Censoring}
+\begin{frame}{Types of censoring}
+\fbox{\bf Right-censoring}\\[3ex]
+We have right censoring when only the r.v. $X_i=\min(T_i,U_i)$ is observed due to
+\begin{itemize}
+\item loss to follow-up
+\item drop-out
+\item study termination
+\end{itemize}
+We call this right-censoring because the true unobserved event
+is to the right of our censoring time; i.e., all we know is
+that the event has not happened at the end of follow-up.
+\end{frame}
+\begin{frame}{Failure events}
+In addition to observing $X_i$, we also get to see the {\bf failure indicator}:
+\[\delta_i=\left\{\begin{array}{ccc}
+1 & \mbox{if} & T_i\le U_i \\
+0 & \mbox{if} & T_i>U_i \end{array} \right. \]
+
+Some software packages instead assume we have a \\
+{\bf censoring indicator}:
+\[c_i=\left\{\begin{array}{ccc}
+0 & \mbox{if} & T_i\le U_i \\
+1 & \mbox{if} & T_i>U_i \end{array} \right. \]
+
+\vspace{0.3in}
+Right-censoring is the most common type of censoring \\
+assumption we will deal with in survival analysis.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{frame}
+\begin{frame}{Left-censored data}
+\fbox{\bf Left censoring}\\[3ex]
+We have left censoring when we can only observe $Y_i=\max(T_i,U_i)$ and the failure indicators:
+\[\epsilon_i=\left\{\begin{array}{ccc}
+1 & \mbox{if} & U_i\le T_i \\
+0 & \mbox{if} & U_i>T_i \end{array} \right. \]
+
+\vspace{0.2in}
+e.g. In studies of time to HIV seroconversion, some of the enrolled
+subjects have already seroconverted at entry into the study - they are
+left-censored.
+
+\end{frame}
+\begin{frame}{Interval-censored data}
+\fbox{\bf Interval censoring }\\[3ex]
+We have interval censoring when we observe $(L_i,R_i)$ where  $T_i\in (L_i,R_i)$
+\\[2ex]
+ex \#1: Time to prostate cancer, observe longitudinal PSA measurements
+\\[2ex]
+ex \#2: Time to undetectable viral load in AIDS studies, based on
+measurements of viral load taken at each clinic visit
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{frame}
+\begin{frame}{Independent versus informative censoring}
+We say censoring is {\bf independent} (non-informative)
+if $U_i$ is independent of $T_i$.\\
+\begin{itemize}
+\item {\bf ex.1} If $U_i$ is the planned end of the study (say, 2
+years after the study opens), then it is usually independent of the
+event times
+~\\
+\item {\bf ex.2} If $U_i$ is the time that a patient drops out of the study
+because they've gotten much sicker and/or had to discontinue taking
+the study treatment, then $U_i$ and $T_i$ are probably not independent
+\end{itemize}
+\end{frame}
+\begin{frame}{What does ``independent censoring" mean?}
+In plain language, independent censoring simply means\\[2ex]
+{\bf An individual censored at $U$ should be representative of all subjects
+who survive to $U$.}
+~\\[2ex]
+This means that censoring at $U$ {\em could} depend
+on prognostic characteristics measured at baseline, but that among
+all those with the same baseline characteristics, the probability
+of censoring prior to or at time $U$ should be the same.
+\end{frame}
+\begin{frame}{Informative censoring}
+Censoring is considered {\bf informative} if the
+distribution of $U_i$ contains any information about the parameters
+characterizing the distribution of $T_i$.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{frame}
+\begin{frame}{Types of censoring times}
+Suppose we have a sample of observations on $n$ people:
+$$(T_1,U_1), (T_2,U_2),..., (T_n,U_n)$$
+
+There are three main types of censoring times:
+\begin{itemize}
+\item {\bf Type I:}  All the $U_i$'s are the same \\
+e.g. animal studies, all animals sacrificed after 2 years \\
+\item {\bf Type II:}  $U_i = T_{(r)} $, the time of the $r$th failure.\\
+e.g. animal studies, stop when 4/6 have tumors\\
+\item  {\bf Random:} the $U_i$'s are random variables, $\delta_i$'s are
+failure indicators:
+\[\delta_i=\left\{\begin{array}{ccc}
+1 & \mbox{if} & T_i\le U_i\\
+0 & \mbox{if} & T_i>U_i
+\end{array} \right. \]
+\end{itemize}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{frame}
+\section{Example datasets}
+\subsection{Duration of nursing home stay}
+\begin{frame}{Example A. Duration of nursing home stay}
+Morris et al., {\em Case Studies in Biometry}, Ch 12
+\\[2ex]
+The National Center for Health Services Research studied 36
+for-profit nursing homes to assess the effects of
+different financial incentives on length of stay. \\[2ex] 
+``Treated" nursing homes received higher per diems for Medicaid patients,
+and bonuses for improving a patient's health and sending them home.
+\\[2ex]
+The study included 1601 patients admitted between May 1, 1981 and
+April 30, 1982.
+\end{frame}
+\begin{frame}{Example A (cont'd)}
+\underline{Variables include:} \\
+~~{\bf LOS} - Length of stay of a resident (in days)\\
+~~{\bf AGE} - Age of a resident\\
+~~{\bf RX} - Nursing home assignment (1:bonuses, 0:no bonuses)\\
+~~{\bf GENDER} - Gender (1:male, 0:female)\\
+~~{\bf MARRIED} - (1: married, 0:not married)\\
+~~{\bf HEALTH} - health status (2:second best, 5:worst)\\
+~~{\bf FAIL} - Failure/Censoring indicator (1:discharged,0:censored)
+
+First few lines of data: \\
+37 86 1 0 0 2 0\\
+61 77 1 0 0 4 0\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{frame}
+\subsection{Fecundability}
+\begin{frame}{Example B. Fecundability}
+
+Women who had recently given birth were asked to
+recall how long it took them to become pregnant, and whether
+or not they smoked during that time.
+The outcome of interest is time
+to pregnancy (in menstrual cycles).
+\scriptsize
+\begin{center}
+\begin{tabular}{ccc}
+Cycle& Smokers & Non-smokers \\ \hline
+1    &  29  &     198 \\
+2    &  16  &     107 \\
+3    &  17  &     ~55 \\
+4    &  ~4  &     ~38 \\
+5    &  ~3  &     ~18 \\
+6    &  ~9  &     ~22 \\
+7    &  ~4  &     ~~7 \\
+8    &  ~5  &     ~~9 \\
+9    &  ~1  &     ~~5 \\
+10   &  ~1  &     ~~3 \\
+11   &  ~1  &     ~~6 \\
+12   &  ~3  &     ~~6 \\
+12$+$&  ~7  &     ~12 \\ \hline
+ \end{tabular}
+ \end{center}
+\normalsize
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{frame}
+\subsection{MAC prevention clinical trial}
+
+\begin{frame}{Example C: MAC Prevention Clinical Trial}
+
+ACTG 196 was a randomized clinical trial to study the effects of
+combination regimens on prevention of MAC ({\em mycobacterium avium
+complex}), one of the most common OIs in AIDS patients.
+
+The {\bf treatment regimens} were:
+%\vspace{-0.2in}
+\begin{itemize}
+\item clarithromycin (new)
+\item rifabutin (standard)
+\item clarithromycin plus rifabutin
+\end{itemize}
+\newpage
+Other characteristics of trial:
+%\vspace{-0.2in}
+\begin{itemize}
+\item Patients enrolled between April 1993 and February 1994
+\item Follow-up ended August 1995
+\item In February 1994, rifabutin dosage was reduced from 3 pills/day
+(450mg) to 2 pills/day (300mg) due to concern over {\bf uveitis}\footnote{\footnotesize
+{\em Uveitis} is an adverse experience resulting in inflammation
+of the uveal tract in the eyes (about 3-4\% of patients
+reported uveitis).}
+\end{itemize}
+
+The main intent-to-treat analysis compared the 3 treatment arms
+without adjusting for this change in dosage.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{frame}
+\subsection{Time to first TB episode}
+\begin{frame}{Example D: Time to first tuberculosis (TB) episode}
+These data come from a longitudinal surveillance study of Kenyan children.  The data have
+multiple lines per patient that correspond to multiple visits to the clinic.
+Data gathered at each visit are:\\[2ex]
+{\bf PATID} - Patient identification\\
+{\bf timetotb} - Time from entry in the study until TB\\
+{\bf first\_tb} - Whether this is the first TB episode\\
+{\bf cd4} - Absolute CD4-positive lymphocyte count\\
+{\bf cd4per} - CD4 percent\\
+{\bf orphan} - Orphaned status\\
+{\bf onARV} - Is the patient currently receiving antiretroviral (ARV) therapy?
+{\bf age} - Age (in years) at each visit\\[2ex]
+The difference of these data is that the explanatory variables (e.g., ARV therapy, CD4 count,
+percent and so on) change over time.
+%\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%First few lines of data:\tiny
+%\begin{verbatim}
+%        patid   onARV   timetotb    cd4   cd4per   orphan   first_tb     age
+%      136AM-2       1          0      .        .        .          0       .
+%      136AM-2       1   10.42857      .        .        .          0       .
+%      139WB-8       0          0     32        2        0          1   10.31
+%      165WB-3       0          0      4        1        1          0    8.69
+%      165WB-3       1   1.714286      4        1        1          0    8.72
+%      165WB-3       1   3.714286      4        1        1          0    8.76
+%      165WB-3       1   5.714286      4        1        1          0     8.8
+%      165WB-3       1   8.714286      4        1        1          0    8.86
+%      165WB-3       1   9.714286      4        1        1          0    8.88
+%      165WB-3       1   10.71429      4        1        1          0     8.9
+%      165WB-3       1   11.71429      4        1        1          1    8.91
+%         .          .     .           .        .        .          .     .
+%         .          .     .           .        .        .          .     .
+%         .          .     .           .        .        .          .     .
+%\end{verbatim}
+%\normalsize
+\end{frame}
+\section{More notation}
+\begin{frame}{More Definitions and Notation}
+There are several equivalent ways to characterize the
+probability distribution of a survival random variable.
+Some of these are familiar; others are special to survival
+analysis.  We will focus on the following terms:
+
+\begin{itemize}
+\item The density function $f(t)$
+\item The survivor function $S(t)$
+\item The hazard function $\lambda(t)$
+\item The cumulative hazard function $\Lambda(t)$
+\end{itemize}
+
+\end{frame}
+\subsection{The survival density function for discrete random variables}
+\begin{frame}{The survival density function}
+Suppose that $T$ takes values in $a_1,a_2, \ldots, a_n$.  Then, the survival density function (or Probability Mass Function) for discrete r.v.'s is defined as:\\
+\begin{eqnarray*}
+ f(t) & = &  Pr(T = t) \\[2ex]
+ & = & \left\{ \begin{array}{ccc}
+ f_j & \mbox{ if } & t=a_j, j=1,2,\ldots,n \\
+ 0 & \mbox{ if } & t\ne a_j, j=1,2,\ldots,n
+ \end{array}
+ \right.
+ \end{eqnarray*}
+\end{frame}
+\begin{frame}{The survival density function for continuous r.v.'s}
+The survival density function for continuous r.v.'s is defined as follows:\\[2ex]
+\[  f(t) = \lim_{\Delta t \rightarrow 0}
+ \frac{1}{\Delta t}  Pr(t \le T \le t+\Delta t) \]
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{frame}
+\subsection{The survivorship function}
+\begin{frame}{The Survivorship Function}
+The survivorship function is as follows:
+$ S(t) = P(T \ge t)$. \\[2ex]
+In other settings, the cumulative distribution function, $F(t)=P(T\le t)$, is of interest.  \\[2ex]
+In survival analysis, our interest tends to focus on the survival function, $S(t)$.
+\end{frame}
+\begin{frame}{Survivorship function for continuous and discrete r.v.'s}
+For a continuous random variable:\\[2ex]
+\[   S(t) = \int_{t}^{\infty} f(u) du \]
+\\[2ex]
+For a discrete random variable:
+\begin{eqnarray*}
+S(t) & = & \sum_{u \ge t} f(u) \\[1ex]
+     & = & \sum_{a_j \ge t} f(a_j) = \sum_{a_j \ge t} f_j
+\end{eqnarray*}
+\end{frame}
+\begin{frame}{Notes}
+
+\begin{itemize}
+\item  From the definition of $S(t)$ for a continuous variable,\\
+$S(t)=1-F(t)$ as long as $f(t)$ is absolutely continuous
+\item  For a discrete variable, we have to decide what to do if an
+event occurs exactly at time $t$; i.e., does that become part of $F(t)$ or
+$S(t)$?
+\item To get around this problem, several books define \\
+$S(t)=Pr(T>t)$, or else define $F(t)=Pr(T<t)$ \\(eg. Collett)
+\end{itemize}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{frame}
+\section{Important functions in survival analysis}
+\subsection{The hazard function}
+\begin{frame}{The Hazard function}
+The Hazard Function $\lambda(t)$.\\[2ex]
+Sometimes called an {\em instantaneous failure
+rate}, the {\em force of mortality}, or the
+{\em age-specific failure rate}.
+\end{frame}
+\begin{frame}{The hazard function for continuous r.v.'s}
+The hazard function is defined as follows for continuous random variables:
+\begin{eqnarray*}
+\lambda(t)  & = &
+\lim_{\Delta t \rightarrow 0} \, \frac{1}{\Delta t}\,
+Pr(t \le T <  t+\Delta t | T \ge t) \\[2ex]
+& = & \lim_{\Delta t \rightarrow 0} \, \frac{1}{\Delta t} \,
+\frac{Pr([t \le T <  t+\Delta t] ~~ \bigcap~~ [T \ge t])}
+{Pr(T \ge t)}\\[2ex]
+& = & \lim_{\Delta t \rightarrow 0} \, \frac{1}{\Delta t} \,
+\frac{Pr(t \le T <  t+\Delta t)}{Pr(T \ge t)}\\[2ex]
+& = & \frac{f(t)}{S(t)}
+\end{eqnarray*}
+\end{frame}
+\begin{frame}{The hazard function for discrete  random variables}
+The hazard function is defined as follows for discrete random variables:
+   \begin{eqnarray*}
+  \lambda(a_j)\equiv \lambda_j   & = &  Pr(T = a_j | T \ge a_j) \\[1ex]
+  & = & \frac{P(T=a_j)}{P(T\ge a_j)}\\[1ex]
+  & = & \frac{f(a_j)}{S(a_j)}\\[1ex]
+  & = & \frac{f(t)}{\sum_{k:a_k\ge a_j}f(a_k)}\\[1ex]
+  \end{eqnarray*}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{frame}
+\subsection{The Cumulative Hazard function}
+\begin{frame}{The Cumulative Hazard function}
+The Cumulative Hazard function $\Lambda(t)$ is defined as follows:\\
+\begin{itemize}
+\item {\bf Continuous random variables:}
+\begin{eqnarray*}
+\Lambda(t)  & = & \int_0^t \lambda(u) du
+\end{eqnarray*}
+
+\item {\bf Discrete random variables:}
+\begin{eqnarray*}
+\Lambda(t) & = &  \sum_{k:a_k<t} \lambda_k
+\end{eqnarray*}
+\end{itemize}
+\end{frame}
+\begin{frame}{Comment}
+The cumulative hazard does not have a very intuitive interpretation.
+\\[2ex]
+However, it turns out to be very useful for certain graphical
+assessments:
+\begin{itemize}
+\item consistency with certain parametric models
+\item evaluation of proportional hazards assumption for Cox models
+\end{itemize}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{frame}
+\subsection{Relationship between survival and hazard}
+\begin{frame}{Relationship between $S(t)$ and $\lambda(t)$}
+
+We've already shown that, for a continuous r.v.
+$$\lambda(t)=\frac{f(t)}{S(t)}$$
+
+For a left-continuous survivor function $S(t)$, we can show:
+\begin{eqnarray*}
+f(t) & = & - S'(t) ~~~~~\mbox{or}~~~ S'(t) ~ = ~ -f(t)
+\end{eqnarray*}
+
+We can use this relationship to show that:
+\begin{eqnarray*}
+- ~ \frac{d}{dt} [\log S(t)] & = &
+- ~ \left(\frac{1}{S(t)}\right)\, S'(t)\\[1ex]
+& = & - ~\frac{-f(t)}{S(t)} =  \frac{f(t)}{S(t)}
+\end{eqnarray*}
+
+So another way to write $\lambda(t)$ is as follows:
+\begin{eqnarray*}
+\lambda(t) & = & - \frac{d}{dt} [\log S(t)]
+\end{eqnarray*}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{frame}
+\begin{frame}{Relationship between $S(t)$ and $\Lambda(t)$: Continuous case}
+In the case of continuous time we have
+\begin{eqnarray*}
+\Lambda(t) & = & \int_0^t \lambda(u)du \\[1.5ex]
+& = &  \int_0^t\frac{f(u)}{S(u)}du \\[1.5ex]
+& = & \int_0^t -\frac{d}{du} \log S(u) du \\[1.5ex]
+& = & -\log S(t)+\log S(0)\\[2ex]
+& & \Rightarrow S(t)=e^{-\Lambda(t)}
+\end{eqnarray*}
+\end{frame}
+\begin{frame}{Relationship between $S(t)$ and $\Lambda(t)$: Discrete case} 
+Suppose that $a_j<t\le a_{j+1}$.  Then
+\begin{eqnarray*}
+S(t) & = & P(T\ge a_1, T\ge a_2, \ldots, T\ge a_{j+1}) \\[1ex]
+& = & P(T\ge a_1)P(T\ge a_2|T\ge a_1) \cdots
+P(T\ge a_{j+1}|T\ge a_j)\\[1ex]
+& = & (1-\lambda_1)\times \cdots \times (1-\lambda_j)\\[1ex]
+& = & \prod_{k:a_k<t}(1-\lambda_k)
+\end{eqnarray*}
+
+Cox defines $\Lambda(t)=\sum_{k:a_k<t}\log(1-\lambda_k)$ so that
+$S(t)=e^{-\Lambda(t)}$ in the discrete case, as well.
+\end{frame}
+\begin{frame}{Some hazard shapes seen in applications}
+Hazard shapes seen in application are as follows:
+\begin{itemize}
+\item {\bf increasing}\\[1ex]
+e.g. aging after 65\\[1ex]
+\item{\bf decreasing} \\[1ex]
+e.g. survival after surgery\\[1ex]
+\item {\bf bathtub} \\[1ex]
+e.g. age-specific mortality\\[1ex]
+\item {\bf constant} \\[1ex]
+e.g. survival of patients with advanced chronic disease
+\end{itemize}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{frame}
+\section{Estimation}
+\begin{frame}{Estimating the survival or hazard function}
+We can estimate the survival (or hazard) function in two
+ways:
+\begin{itemize}
+\item by specifying a parametric model for $\lambda(t)$
+based on a particular density function $f(t)$
+\item by developing an empirical estimate of the survival
+function (i.e., non-parametric estimation)
+\end{itemize}
+\end{frame}
+\begin{frame}{Under no censoring}
+\underline{If no censoring:}\\[2ex]
+The empirical estimate of the survival function, $\tilde{S}(t)$,
+is the proportion of individuals with event times greater than $t$.
+\end{frame}
+\begin{frame}{Estimation under censoring}
+\underline{With censoring:}\\[2ex]
+If there are censored observations, then $\tilde{S}(t)$ is not a
+good estimate of the true $S(t)$, so other non-parametric methods
+must be used to account for censoring (life-table methods,
+Kaplan-Meier estimator)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{frame}
+%\subsection{Measures of central tendency}
+\begin{frame}{Measuring Central Tendency in Survival}
+\begin{itemize}
+\item  {\bf Mean survival} - call this $\mu$
+\begin{eqnarray*}
+ \mu & = & \int_{0}^{\infty} u f(u)du ~~~\mbox{for continuous } T\\
+ & = & \sum_{j=1}^n a_j f_j ~~~\mbox{for discrete } T
+\end{eqnarray*}
+\item  {\bf Median survival} - call this $\tau$, is defined by
+\[  S(\tau) = 0.5 \]
+Similarly, any other percentile could be defined.
+\end{itemize}
+In practice, we don't usually hit the median survival at exactly
+one of the failure times.  In this case, the estimated median survival
+is the {\em smallest} time $\tau$ such that
+$$\hat{S}(\tau)\leq 0.5$$
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{frame}
+\subsection{Parametric survival distributions}
+\begin{frame}{Some Parametric Survival Distributions}
+The {\bf Exponential} distribution  (1 parameter)
+\begin{eqnarray*}
+f(t) & = & \lambda e^{-\lambda t} \mbox{ for } t\ge 0 \\[2ex]
+S(t) & = & \int_t^\infty f(u) du  =  e^{-\lambda t} \\[2ex]
+\lambda(t) & = & \frac{f(t)}{S(t)} \\
+& = & \lambda ~~~~~\mbox{ constant hazard!} \\[2ex]
+\Lambda(t) & = & \int_0^t \lambda(u) \, du \\[1ex]
+ & = & \int_0^t \lambda \, du = \lambda t
+\end{eqnarray*}
+{\bf Check:} Does $S(t)=e^{-\Lambda(t)}$ ? \\[2ex]
+\end{frame}
+\begin{frame}{Characteristics of the exponential distribution}
+{\bf median:} solve $0.5=S(\tau)=e^{-\lambda \tau}$:
+\[\Rightarrow \tau=\frac{-\log(0.5)}{\lambda}\]
+\\[2ex]
+{\bf mean:}
+\[\int_0^\infty u\lambda e^{-\lambda u}du=\frac{1}{\lambda}\]
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{frame}
+\begin{frame}{Weibull distribution (2 parameters)}
+Generalizes exponential:
+\begin{eqnarray*}
+S(t) & = & e^{-\lambda t^\kappa} \\[2ex]
+f(t) & = & \frac{-d}{dt}S(t)=\kappa \lambda t^{\kappa-1}
+e^{-\lambda t^\kappa}\\[2ex]
+\lambda(t) & = & \kappa \lambda t^{\kappa-1}\\[2ex]
+\Lambda(t) & = & \int_0^t\lambda(u) du = \lambda t^\kappa
+\end{eqnarray*}
+
+$\lambda$ -  the {\em scale} parameter\\
+$\kappa$  - the {\em shape} parameter
+\end{frame}
+\begin{frame}{Weibull distribution (cont'd)}
+The Weibull distribution is convenient because of simple
+forms.  It includes several hazard shapes:\\[2ex]
+$\kappa=1 \rightarrow \mbox{ constant hazard}$ \\[1ex]
+$0<\kappa<1 \rightarrow \mbox{ decreasing hazard}$ \\[1ex]
+$\kappa > 1 \rightarrow \mbox{ increasing hazard}$
+
+\end{frame}
+\begin{frame}{The Rayleigh distribution}
+The Rayleigh distribution is another 2-parameter generalization of exponential:
+\[\lambda(t)=\lambda_0+\lambda_1 t\]
+\end{frame}
+\begin{frame}{The Compound Exponential distribution}
+This is given by the following definition:
+$T\sim \exp(\lambda), \, \lambda\sim g$
+\[ f(t)=\int_0^\infty \lambda e^{-\lambda t}g(\lambda)d\lambda\]
+\end{frame}
+\begin{frame}{The log-normal and log-logistic distributions}
+Possible distributions for $T$ obtained by specifying for $\log T$
+any convenient family of distributions, e.g.\\[1ex]
+$\log T \sim$ normal (non-monotone hazard) \\[1ex]
+$\log T \sim$ logistic
+\end{frame}
+\begin{frame}{The inverse Gaussian distribution}
+First passage time of Brownian motion to linear boundary.
+\end{frame}
+\begin{frame}{When to use each one}
+Why use one versus another?
+\begin{itemize}
+\item technical convenience for estimation and inference\\[2ex]
+\item explicit simple forms for $f(t), S(t)$, and $\lambda(t)$.\\[2ex]
+\item qualitative shape of hazard function
+\end{itemize}
+
+One can usually distinguish between a one-parameter
+model (like the exponential) and two-parameter (like Weibull or
+log-Normal) in terms of the adequacy of fit to a dataset.
+\\[2ex]
+Without a lot of data, it may be hard to distinguish between
+the fits of various 2-parameter models (i.e., Weibull vs log-normal)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Miscellaneous}
+
+%\subsection{More to come}
+\begin{frame}{Preview of Coming Attractions}
+Next class we will discuss the most famous non-parametric
+approach for  estimating the survival distribution,
+called the {\em Kaplan-Meier estimator}.
+\\[2ex]
+To motivate the derivation of this estimator, we will
+first consider a set of survival times where there is
+no censoring.
+\\[2ex]
+The following are {\bf times to relapse} (weeks) for 21 leukemia patients
+receiving control treatment (Table 1.1 of Cox \& Oakes): 
+\\[1.5ex]
+\centerline{1, 1, 2, 2, 3, 4, 4, 5, 5, 8, 8, 8, 8, 11, 11, 12, 12, 15,
+17, 22, 23}
+~\\[2ex]
+How would we estimate S(10), the probability that
+an individual survives to time 10 or later?
+\\[2ex]
+What about $\tilde{S}(8)$?  ~~~~~ Is it $\frac{12}{21}$ or $\frac{8}{21}$?
+\end{frame}
+\end{document}

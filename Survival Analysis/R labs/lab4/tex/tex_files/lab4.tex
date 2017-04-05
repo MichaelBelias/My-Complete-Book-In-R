@@ -1,0 +1,75 @@
+In today's lab, we are going to review the basic interpretation of a Cox proportional
+hazards model. Then we are going to learn how to fit a Cox PH model using \verb|R|
+and evaluate the implication of tied failure times.
+\begin{enumerate}[(a)]
+ \item \textbf{\underline{Interpretation of Cox Model: Prognosis with Breast Cancer.}} A follow-up study of post-menopausal women diagnosed with breast cancer was
+performed to examine whether the estrogen receptor (ER) status of the tumor was
+related to prognosis, adjusting for stage of disease at diagnosis and age at diagnosis.
+
+Let $\lambda(t|\mathbf{X})$ be the hazard of death at month $t$ after diagnosis for an individual with covariates $\mathbf{X}$, $\mathbf{X} = (X_{E},X_{A},X_{S})$, where
+\begin{align}
+X_{E} = \begin{cases}
+1, & \text{ER positive tumor} \\
+0, & \text{ER negative tumor}
+\end{cases}
+,
+X_{A} = \text{Age at diagnosis (years)}
+,
+X_{S} = \begin{cases}
+1, & \text{is situ} \\
+2, & \text{local} \\
+3, & \text{regional} \\
+4, & \text{distant}
+\end{cases} \nonumber
+\end{align}
+Suppose the following proportional hazards model was found to fit the data:
+\begin{align}
+\lambda(t|\mathbf{X})
+ = \lambda_{0,X_{S}}(t)\exp\left\{-0.783X_{E}+0.007X_{A}\right\},\nonumber
+\end{align}
+where $\lambda_{0,X_{S}}(t)$ is the baseline hazard function, specific for each stage (i.e., the value of $X_{S}$). In other words, this is a stratified proportional hazards model, stratified by tumor stage. For the following questions, get an actual number if you can, showing how you got it. If you can't get
+an actual number, then write an expression for how it would be calculated if you had additional
+information
+\begin{enumerate}[(i)]
+\item Based on this model, what is your best estimate of the hazard ratio (i.e. relative
+risk) of death for a woman with an ER positive tumor relative to a woman of the
+same age and with the same stage ER negative tumor, the same number of months
+beyond diagnosis? Do women with ER positive tumors have a more favorable or
+less favorable prognosis?
+\item Based on this model, what can you say about the hazard ratio of death for a
+woman 62 years old at diagnosis with a localized ER positive tumor, 24 months
+beyond diagnosis, relative to a woman 67 years old at diagnosis with a localized
+ER negative tumor, 24 months beyond diagnosis?
+\item Based on this model, what can you say about the hazard ratio of death for a
+woman 55 years old at diagnosis with an in situ ER positive tumor, 36 months
+beyond diagnosis, relative to a woman 55 years old at diagnosis with an in situ ER
+negative tumor, 24 months beyond diagnosis?
+\item Based on this model, what can you say about the hazard ratio of death for a
+woman 60 years old at diagnosis with an ER positive tumor with regional spread,
+24 months beyond diagnosis, relative to a woman 60 years old at diagnosis with
+an ER negative in situ tumor, 24 months beyond diagnosis?
+\end{enumerate}
+
+\item \textbf{\underline{Fitting Cox Model and handling of ties: Nursing Home Data.}} Now we are going to move into \verb|R| considering the dataset \emph{nurshome.dta}. The National Center for Health Services Research studied 36 for-profit nursing homes to assess the effects of different financial incentives on 
+length of stay. “Treated” nursing homes received higher per diems for Medicaid 
+patients, and bonuses for improving a patient's health and sending them home. 
+The study included 1601 patients admitted between May 1, 1981 and April 30, 1982. \\
+Variables include: \\
+\textbf{\emph{los}} - Length of stay of a resident (in days) \\
+\textbf{\emph{age}} - Age of a resident \\
+\textbf{\emph{rx}} - Nursing home assignment (1:bonuses, 0:no bonuses) \\
+\textbf{\emph{gender}} - Gender (1:male, 0:female) \\
+\textbf{\emph{married}} - Marital Status (1: married, 0:not married) \\
+\textbf{\emph{health}} - health status (2:second best, 5:worst) \\
+\textbf{\emph{fail}} - Failure/Censoring indicator (1:discharged, 0:censored) 
+\begin{enumerate}[(i)]
+\item Import the data in \verb|R|. Use the \verb|coxph| function to fit a Cox proportional hazards model focusing on the effect of marital status on the length of stay of a resident (type ?\verb|coxph| to see the syntax required). What is the estimated hazard ratio? Interpret the result.
+\item Which methods for tie handling are available in the \verb|coxph| function? Refit the model of part (i) using all the available methods. How much impact do the different approaches have on the estimate of $\beta$? Would you expect tied failure times to be a big issue in this dataset? Which 
+approach would you recommend?
+\item Compute the \emph{Logrank} and \emph{Wilcoxon} test focusing on the effect of marital status on the length of stay, and compare the results with the test statistics you obtained in part (ii). Do any of them match?
+\end{enumerate}
+\item \textbf{Optional:} Consider the case of a clinical trial in which a new treatment is compared with a standard treatment (control). Suppose that the hazard rate of death is 4 events/year in the control group, whereas it's 2 in the treatment group, assuming also that the rate is constant over time for both groups. Thus, the hazard ratio that compares the treatment group with the control group equals 0.5. To allow the occurrence of right censoring, suppose that there is an underlying censoring time that is exponentially distributed with its mean being 5 years. Assume that the number of patients in each treatment group is 5000.
+\begin{itemize}
+\item Simulate the above setting in \verb|R|, using the \verb|set.seed| function to get reproducible results. Then fit a cox model to those data. What hazard ratio did you get? Does the cox model seem appropriate for analysing data similar to the ones you simulated? Explain your opinion.
+\end{itemize}
+\end{enumerate}

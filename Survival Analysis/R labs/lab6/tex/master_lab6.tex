@@ -1,0 +1,36 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{fontspec}
+\usepackage{setspace}
+\usepackage{amsmath,amsfonts,amssymb,amsthm}
+\usepackage[margin=1.1in]{geometry}
+\usepackage{graphicx}
+\usepackage{subfigure}
+\usepackage{listings}
+\usepackage{booktabs,dcolumn}                     
+\usepackage{fancyhdr}
+\usepackage{bbm}
+\usepackage{multirow}
+\usepackage{booktabs}
+\usepackage{harvard}
+\usepackage{enumerate}
+\newcommand{\ra}[1]{\renewcommand{\arraystretch}{#1}}
+\DeclareMathOperator{\tr}{tr}
+\DeclareMathOperator{\vect}{vec}
+\makeatletter
+\newcommand*{\rom}[1]{\expandafter\@slowromancap\romannumeral #1@}
+\makeatletter
+
+\setstretch{1.4}
+\setlength{\headheight}{15pt} 
+\graphicspath{{graphs/}}  
+
+\newtheorem{sectheorem}{Example}
+ 
+ 
+\begin{document}
+\title{Applied Survival Analysis - January 2016\\Lab 6: Model Selection in Survival Analysis}
+\date{\vspace{-10ex}}
+\author{\vspace{-10ex}}
+\maketitle
+\input{./tex_files/lab6}
+\end{document}
