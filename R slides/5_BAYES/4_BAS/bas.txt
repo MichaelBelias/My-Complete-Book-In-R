@@ -1,0 +1,97 @@
+
+library(BAS)
+
+res1 <- bas.lm( y~., data=ex1, prior='hyper-g', alpha=3 )
+
+
+res1
+
+summary(res1)
+summary(res1, 10)
+
+
+names(res1)
+res1$which
+res1$logmarg
+res1$mse
+res1$ols
+res1$ols.se
+res1$shrinkage
+res1$R2
+res1$namesx
+
+coef(res1,res2)
+plot(res1)
+par(mfrow=c(2,2))
+plot(res1)
+
+image(res1)
+
+eplogprob(lm(y~., data=ex1))
+res1
+
+fitted(res1)
+fitted(res1, type='MPM')
+fitted(res1, type='BMA', top=10)
+
+
+
+#
+# hyper-g 
+# 
+n<-nrow(ex1)
+res2 <- bas.lm( y~., data=ex1, prior='g-prior', alpha=n )
+res2
+
+
+
+#
+# commands for comparison with winbugs
+coef(res2)
+summary(res2)
+
+
+coef(res1)
+summary(res1)
+#
+# BMA estimate of w
+sum(res1$postprobs*res1$shrinkage)
+
+#
+# BMA estimate of g
+# (does not directly corresponds to the mean because 
+#  it is based on transformation of the mean of w)
+w<-res1$shrinkage
+w[w==1] <- 1-exp(-10)
+g<-w/(1-w)
+sum(res1$postprobs*g)
+
+
+
+#
+# Zellner and Siow
+# 
+n<-nrow(ex1)
+res3 <- bas.lm( y~., data=ex1, prior='ZS-null', alpha=n )
+res3
+
+
+
+#
+# commands for comparison with winbugs
+
+
+coef(res3)
+summary(res3)
+#
+# BMA estimate of w
+sum(res3$postprobs*res3$shrinkage)
+
+#
+# BMA estimate of g
+# (does not directly corresponds to the mean because 
+#  it is based on transformation of the mean of w)
+w<-res3$shrinkage
+w[w==1] <- 1-exp(-10)
+g<-w/(1-w)
+sum(res3$postprobs*g)

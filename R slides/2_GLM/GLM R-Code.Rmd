@@ -1,0 +1,1113 @@
+---
+title: "GLM Explanation with R"
+author: "Mpelias Michael"
+date: "23 February 2016"
+output: 
+  pdf_document:
+    number_sections: yes
+    toc: yes
+---
+
+\newpage
+
+```{r,echo=FALSE}
+library(devtools)
+#install_github("cboettig/knitcitations")
+library("knitcitations")
+library("RefManageR")
+cleanbib()
+options("citation_format" = "pandoc")
+```
+, , , 
+```{r,echo=FALSE}
+bib=c(BibEntry("book", key = "Delorme A.", title = "STATISTICAL METHODS.Encyclopedia of Medical Devices and Instrumentation.", year = 2005, author = "Arnaud Delorme",DOI = "10.1002/0471732877.emd318"  ,publisher = "University of San Diego, California"), 
+BibEntry("Article", key = "Mirowski2012",journal= "American Scientist", title = "Harms to Health from the Pursuit of Profits",author = "RStudio Team", date="2012-01-01", volume= 100, number= 1, page= 87), 
+BibEntry("Manual", key = "RStudio", title = "RStudio: Integrated Development Environment for R",author = "RStudio Team", address = "Boston, MA",year = "2015",url = "http://www.rstudio.com/") )
+
+```
+
+
+
+# Introduction
+## Installing R 
+To download R you have to go to `www.r-project.org` 
+
+
+# 
+This lesson is written for explaining the GLM analysis in R - Code. The main goals are:
+
+* Understand through plots when to use other linear models 
+* Understand the basic methodology in Generalized Linear Models
+* Prediction using GLM analyses
+* Learn the use of R for:
+    + Linear Models ( Generalized or not ) 
+    + Plots using ggplot2 package
+    + 
+  
+For this lesson we will use several libraries, such as:
+
+* ggplot2 for plotting (with GGally , gridExtra extensions)
+* MASS with numerous Datasets and functions
+* 
+*
+*
+
+The libraries needed should be installed.
+Please Run the Code below.
+```{r,message=F,eval=FALSE}
+###Function for checking if pkg is installed 
+is_installed <- function(mypkg) is.element(mypkg, installed.packages()[,1]) 
+
+####Packages needed ,"alr3","relimp"
+package_names= c("MASS","corrplot","fortunes","mfp","ggplot2","GGally",
+                 "gridExtra","leaps","elasticnet","caret","knitr","gridExtra","RVAideMemoire","car","vcd")
+###Package installer and installation
+for(package_name in package_names)  
+{  
+  if(!is_installed(package_name))  
+  {  
+    install.packages(package_name)  
+  }  
+  library(package_name,character.only=TRUE,quietly=TRUE,verbose=FALSE) 
+  cat("Package :",package_name," Acquired","\n")
+  
+}  
+
+rm(package_name,package_names,is_installed)
+search()
+```
+
+```{r,echo=F,message=F}
+library(knitr)
+library(MASS)
+library(corrplot)
+library(car)
+library(relimp)
+library(fortunes)
+library(mfp)
+library(ggplot2)
+library(GGally)
+library(gridExtra)
+library(leaps)
+library(elasticnet)
+library(caret)
+library(RVAideMemoire)
+library(vcd)
+```
+
+\newpage
+
+# Statistical Analysis
+
+What is statistical analysis? 
+It's the science of collecting, exploring and presenting large amounts of data to discover underlying patterns and trends. Statistics are applied every day - in research, industry and government - to become more scientific about decisions that need to be made`r citep("http://www.sas.com/en_us/insights/analytics/statistical-analysis.html")`.
+A conclusion is easily driven, we need to know the data and what is that question we want to make. 
+In the table below is the very first basic Statistical `r citep(bib[1])` .
+
+![Caption for the picture.](./WhichStatisticalAnalysis.png)
+
+
+
+# Descriptive Statistic
+
+The very first thing we can do is check our Data. The variables can be either Categorical (Ordinal or Nominal) or Continuous. 
+
+And the first question to be made is to describe the Data :
+* Are they continuous or Categorical?
+* Are they Normally Distributed or not?
+* What Proportion exist for the Categorical?
+
+
+Our Data set is `diamonds` and contains the prices and other attributes of almost 54,000 diamonds. 
+Diamonds data frame has 53940 rows and 10 variables:
+
+* price: price in US dollars 
+
+* carat: weight of the diamond 
+
+* cut: quality of the cut (Fair, Good, Very Good, Premium, Ideal)
+
+* colour: diamond colour, from J (worst) to D (best)
+
+* clarity: a measurement of how clear the diamond is (I1 (worst), SI1, SI2, VS1, VS2, VVS1, VVS2, IF (best))
+
+* x: length in mm (0-10.74)
+
+* y: width in mm (0-58.9)
+
+* z: depth in mm (0-31.8)
+
+* depth: total depth percentage = z / mean(x, y) = 2 * z / (x + y) (43-79)
+
+* table: width of top of diamond relative to widest point (43-79)
+
+For more information type `??diamonds`
+
+The first 10 observations are:
+
+```{r,echo=FALSE}
+library(knitr)
+kable(head(diamonds,10) )
+```
+
+The Continuous Variables seem to be:
+
+* carat
+* depth
+* table
+* price
+* x
+* y
+* z
+
+
+The statistics that describes for the Normally Distributed Variables are for :
+
+* location measures (mean)
+* measures of variability (SD)
+
+while for Non -Normally Distributed Variables:
+
+* location measures (median)
+* measures of variability (quartiles, Min, Max)
+
+The normality test we use is the Shapiro- Wilk for this session. The test has a limitation of 5.000 length Vector to check if is Normally Distributed so we pick a sample sized 5.000.
+
+The first variable is carat, which counts the weight of the diamond. 
+```{r}
+shapiro.test(sample(diamonds[,1],size = 5000))
+```
+
+As expected it is not normally distributed which can be shown in the plot below:
+```{r}
+ggplot(data = diamonds,aes(x = carat)) + geom_histogram(bins = 20,colour= "red",
+                                                                 fill="green",alpha=0.55) +
+  labs(title="Diamond's Weight",   x = "Weight (carats)", y= "Counts")
+```
+
+So the descriptive statistics are :
+
+```{r}
+summary(diamonds[,1])
+```
+
+Next we shall check the `depth` Variable. 
+
+The Shapiro Wilk seems to reject the $H_0$ : The depth variable is normally distributed
+
+```{r}
+shapiro.test(sample(diamonds$depth,size = 5000))
+```
+
+But Graphically that is not true. The plot seems to be very Normal.
+
+```{r}
+ggplot(data = diamonds,aes(x = diamonds$depth)) + geom_histogram(bins = 50,colour= "red",
+                                                                 fill="green",alpha=0.55) +
+  labs(title="Diamond's Depth",   x = "Size (mm)", y= "Counts")
+```
+
+So the descriptive statistics are:
+
+
+```{r}
+mean(diamonds$depth)
+sd(diamonds$depth)
+```
+
+
+The price's plot does not resemble the Normal Distribution too.
+
+```{r}
+ggplot(data = diamonds,aes(x = diamonds$price)) + geom_histogram(bins = 50,colour= "red",
+                                                                 fill="green",alpha=0.55) +
+  labs(title="Diamond's prices",   x = "Prices (US dollars)", y= "Counts")
+```
+
+So the descriptive statistics are :
+
+```{r}
+summary(diamonds$price)
+```
+
+
+The x, Y, Z  plots does not resemble the Normal Distribution too.
+
+```{r}
+plot_x=ggplot(data = diamonds,aes(x = diamonds$x)) + 
+  geom_histogram(bins = 25,colour= "red",fill="green",alpha=0.55) +labs(title="Histogram of Diamnods X-axis Measurement",  y = "Frequencies", x = "Size in mm")
+plot_y=ggplot(data = diamonds,aes(x = diamonds$x)) + 
+  geom_histogram(bins = 25,colour= "red",fill="green",alpha=0.55)  +labs(title="Histogram of Diamnods Y-axis Measurement",  y = "Frequencies", x = "Size in mm")
+plot_z=ggplot(data = diamonds,aes(x = diamonds$x)) + 
+  geom_histogram(bins = 25,colour= "red",fill="green",alpha=0.55)  +labs(title="Histogram of Diamnods Z-axis Measurement",  y = "Frequencies", x = "Size in mm")
+grid.arrange(plot_x,plot_y,plot_z)
+```
+
+So the descriptive statistics will be :
+
+```{r}
+apply(diamonds[,8:10],2 , summary)
+```
+
+
+
+
+The Categorical Variables are:
+
+* cut
+* colour
+* clarity 
+
+
+Second is the variable `cut`  that shows the quality of the cut. It's a Categorical with
+Fair, Good, Very Good, Premium, Ideal
+
+```{r}
+table(diamonds[,2])
+
+pie <- ggplot(data = diamonds,aes(x = factor(1), fill = factor(cut))) +
+  geom_bar(position = "stack")
+
+at <- as.numeric(cumsum(table(diamonds$cut))-0.5*table(diamonds$cut))
+
+
+pie + coord_polar(theta = "y") + ylab("Frequencies") + labs(title = "Cut percentage")  + 
+  annotate(geom = "text", y = at , x = 1, label = summary(diamonds[,2]) )
+
+
+```
+
+Next is the colour of the diamond with 7 categories from D (the best) to J (the worst) 
+
+```{r}
+table(diamonds[,3])
+pie <- ggplot(data = diamonds,aes(x = factor(1), fill = factor(color))) +
+  geom_bar(position = "stack")
+
+at <- as.numeric(cumsum(table(diamonds$color))-0.5*table(diamonds$color))
+
+pie + coord_polar(theta = "y") + ylab("Frequencies") + labs(title = "Color percentage")  + 
+  annotate(geom = "text", y = at , x = 1, label = summary(diamonds[,3]) )
+
+```
+
+
+Next is the clarity of the diamond with 8 categories.
+
+```{r}
+table(diamonds[,4])
+pie <- ggplot(data = diamonds,aes(x = factor(1), fill = factor(clarity))) +
+  geom_bar(position = "stack")
+
+at <- as.numeric(cumsum(table(diamonds$clarity))-0.5*table(diamonds$clarity))
+
+pie + coord_polar(theta = "y") + ylab("Frequencies") + labs(title = "Clarity Frequencies")  + 
+  annotate(geom = "text", y = at , x = 1, label = summary(diamonds[,4]) ) + guides(fill=guide_legend("Clarity categories"))
+
+```
+
+## One Sample comparison to a Hypothetical Distribution.
+### One-Sample t-test , Wilcoxon , Binomial and $X^2$ test
+
+The next question we need to make is whether our Variables fit a Hypothetical Distribution. 
+
+For the Categorical there are two tests the Binomial (and the $X^2$ test).
+
+Suppose that we know that the percentage of the ideal cuts are 40% of all cuts and we want to check if that proportion appears in our Data-Set.
+The Binomial test Hypothesis testing is :
+
+* $H_0$ The Proportion of the Ideal Cut is 40%
+* $H_1$ Otherwise
+
+```{r}
+prop.test(sum(diamonds$cut == "Ideal"),dim(diamonds)[1],p = 0.40)
+```
+
+In this example the p-value = 0.4 so we can't reject the null Hypothesis.
+
+If the variable is Continuous and normally Distributed then we make a one sample t-test.
+
+* $H_0$ The mean doesn't differ from 55
+* $H_1$ The mean differs from 55
+
+Suppose we want to check whether the averaging depth differs or not from 55.
+
+```{r}
+t.test(x = diamonds$depth,mu=61)
+```
+
+The p-value <0.001 so we reject the null hypothesis and accept with great certainty that the mean is not equal to 55.
+
+For the non-normal Variable the appropriate test is the Wilcoxon test.
+
+```{r}
+wilcox.test(x = diamonds$price,mu=2401 , paired = FALSE)
+```
+
+## Two Sample comparison 
+
+### Paired Samples
+
+Next Statistical analysis that we may have is to compare samples. 
+If these samples are paired meaning that we have two related observations (i.e. two observations per subject) then we use Wilcoxon Signed-Rank Test for the Categorical data and Paired t-test for the Normally distributed continuous data and Wilcoxon Signed-Rank Test for the other continuous.
+
+For the following examples I will use the hsb2 dataset of UCLA found in `http://www.ats.ucla.edu/stat/data/hsb2.csv`
+```{r,echo=FALSE}
+hsb2 <- within(read.csv("http://www.ats.ucla.edu/stat/data/hsb2.csv"), {
+    race <- as.factor(race)
+    schtyp <- as.factor(schtyp)
+    prog <- as.factor(prog)
+})
+```
+
+#### Sign Test mcnemar.test(X)
+
+```{r}
+
+```
+
+
+
+#### Paired t-test
+
+If the variables are Continuous then we can make a Paired t-test to check if the means of the tow samples differ.
+The Hypothesis testing is:
+
+* $H_0$: The means are equal
+* $H_1$: The means are not equal
+
+```{r}
+t.test(hsb2$write, hsb2$read, paired = TRUE)
+```
+
+#### Wilcoxon Signed-Rank Test
+
+The Wilcoxon Signed-Rank Test is for continuous Data that are not Normally distributed and the Hypothesis Test is :
+
+* $H_0$: The samples are identical 
+* $H_1$: Otherwise
+
+```{r}
+wilcox.test(hsb2$write, hsb2$read, paired = TRUE)
+```
+
+Here we check whether the Write Vs Read exams of the same student are identically distributed.
+The p-value is greater than 0.05 so we do not reject the null Hypothesis.
+
+### Independent Samples 
+
+#### $X^2$ test and Fisher's exact test
+
+If the samples are independent and Categorical then the appropriate statistic is $X^2$ test. 
+$X^2$ test creates a kxn contingency table (in this case a 2x2) and check
+$X^2$ test has the following assumption that all contingency cells having expected values < 5, if that is not true then we make a Fisher's exact test.
+
+#### Independent (unpaired) samples t-test 
+
+We are assuming Normality in both samples. 
+For example if we are interested to check if the `ideal` cut have on average higher depth than the `Fair` cut we make a independent t-test.
+
+```{r}
+with(diamonds, t.test(depth[cut == "Fair"], depth[cut == "Ideal"]))
+```
+
+The average mean of depth is 64.04 and 61.70 for the `Fair` and the `Ideal` cuts. The p-value < 0.001 so with great confidence we can say that the average depth in the `Fair` cutted diamonds is higher than the depth in the `Ideal` cutted diamonds.
+The comparison that the t-test does can be drawn 
+
+```{r}
+mean1= mean(diamonds[diamonds$cut=="Ideal",]$depth)
+mean2= mean(diamonds[diamonds$cut=="Fair",]$depth)
+SD1= sd(diamonds[diamonds$cut=="Ideal",]$depth)
+SD2= sd(diamonds[diamonds$cut=="Fair",]$depth)
+
+X= data.frame(cbind(depth=c(Ideal = rnorm(50000,mean1,SD1), Fair = rnorm(50000,mean2,SD2))),Cut=c(rep("Ideal",50000),rep("Fair",50000)))
+
+
+ggplot(X,aes(x=depth, fill= Cut)) + 
+  geom_density(alpha=0.55) + 
+  labs(title="Depth Distributios By Cut")
+```
+
+#### Mann-Whitney-Wilcoxon Test (non parametric test)
+
+Two data samples are independent if they come from distinct populations and the samples do not affect each other. Using the Mann-Whitney-Wilcoxon Test, we can decide whether the population distributions are identical without assuming them to follow the normal distribution. 
+
+```{r}
+wilcox.test(carat ~ cut, data=diamonds[diamonds$cut == "Ideal" | diamonds$cut == "Fair",]) 
+```
+
+
+## Three or more samples comparison 
+
+When we have 3 or more  samples first and the samples are "Paired" (matched), then the appropriate statistical analyses are Cochrane Q test for categorical, Repeated measures ANOVA and Friedman test for Continuous depending on the Normality.
+
+### Paired
+#### Cochran's Q test
+
+If the samples are matched (repeated measures of the same person) and Categorical we can use the Cochrane Q test.
+The Hypothesis Test is :
+* $H_0$ : The difference in probabilities is equal to 0
+* $H_1$ : The difference in probabilities is not equal to 0 
+
+The Statistical test is $X^2$ distributed and it is calculated by the following:
+
+Q = $\frac{(k-1)(k \sum_{i=1}^{N} G_j^2 - (\sum_{i=1}^{N} G_j)^2)}{k \sum_{i=1}^{N}L_i - \sum_{i=1}^{N}L_i^2}$
+
+For Example let's suppose that we have a series of drugs to cure 4 diseases (Disease A, Disease B, Disease C ,Disease D) the results are binomial 0 for no cure, 1 for Cure and there are 4 drugs (Drug A ,Drug B ,Drug C ,Drug D) to be checked if they have the same results or not.
+
+```{r,echo=FALSE}
+
+x= matrix(c(1,1,0,0,1,1,0,1,1,0,0,0,1,1,0,0),ncol = 4, 
+          dimnames = list(c("A","B","C","D"), c("A","B","C","D")) )
+
+results <- c(1,1,0,0,1,1,0,1,1,0,0,0,1,1,0,0)
+drugs <- factor(rep(paste("Drug",LETTERS[1:4]),4) )
+diseases<- factor(  rep( paste("Disease",LETTERS[1:4]), each =4) )
+
+
+kable(tapply(results,list(drugs,diseases),sum))
+
+cochran.qtest(results ~ drugs|diseases )
+
+```
+
+The p-value < 0.05 shows that we reject the null Hypothesis meaning that the effectiveness of at least two treatments differ. The cochran.qtest() command for less than 0.05 p-value makes a pairwise Wilcoxon sign test.
+
+#### Repeated Measures ANOVA.
+
+If the samples are Continuous and satisfy the following assumptions :
+
+* Sphericity (Homogeneity over the measures ~ equal Variances of the residuals) 
+* Normality
+
+The Hypothesis is :
+
+* $H_0$ : The mean is the same during the measurements
+* $H_1$ : Otherwise
+
+The data below are randomly generated. 
+
+```{r,echo=FALSE}
+set.seed(123)
+Blood.Pressure <- data.frame(ID=factor(rep(1:10, times= 4)),
+                     month=factor(rep(1: 4,  each=10)),
+                     Blood_Pressure=rnorm(10*4, rep(c(20, 18, 15, 14), each=10), 2))
+
+kable(head(Blood.Pressure))
+
+aovRBp <- aov(Blood_Pressure ~ month + Error(ID/month), data=Blood.Pressure)
+summary(aovRBp)
+
+Blood.Pressure.wide <- reshape(Blood.Pressure, v.names="Blood_Pressure", timevar="month", idvar="ID",
+                  direction="wide")
+kable(head(Blood.Pressure.wide))
+fit   <- lm(cbind(Blood_Pressure.1, Blood_Pressure.2, Blood_Pressure.3, Blood_Pressure.4) ~ 1, data=Blood.Pressure.wide)
+idata    <- data.frame(month=gl(4, 1))
+AnovaRBp <- Anova(fit, idata=idata, idesign=~month)
+summary(AnovaRBp, multivariate=FALSE, univariate=TRUE)
+```
+
+The result is significant indicating that the mean of blood pressure is not the same by month. 
+
+
+### Friedman Test
+
+If we don't have Normality we can use the Friedman Test which is the Repeated Measures ANOVA non parametric equivalent. 
+The Hypothesis test is :
+
+* $H_0$: The distributions (whatever they are) are the same across repeated measures
+* $H_1$: The distributions across repeated measures are different
+
+
+```{r}
+
+friedman.test(y = as.matrix(Blood.Pressure.wide[,2:5]))
+
+friedman.test(Blood.Pressure$Blood_Pressure,Blood.Pressure$month,Blood.Pressure$ID)
+```
+
+Both ways show that the blood pressure is changing by the month.
+
+### Independent 
+When the samples are independent we use $X^2$ for Categorical , One- Way ANOVA and Kruskal Wallis.
+
+
+
+#### One-Way ANOVA
+
+If the samples are Continuous and satisfy the following assumptions :
+
+* Sphericity (Homogeneity over the measures ~ equal Variances of the residuals) 
+* Normality
+
+Then One-Way ANOVA is the appropriate statistic. 
+For example we have the height of 200 children from 3 different Countries.
+
+
+```{r}
+height.DF= data.frame(  cbind(  Height= round(c(rnorm(200,1.5,0.1),rnorm(200,1.6,0.1),rnorm(200,1.45,0.1)) ,2) , 
+                                Country=c(rep(0,200),rep(1,200) ,rep(2,200) )))
+height.DF$Country = factor(height.DF$Country, labels = c("Greece", "Holland", "Kenya"))
+
+ggplot(height.DF, aes(x = as.factor(Country), y = Height)) +
+  geom_boxplot(fill = "green", colour = "red") + xlab("Country") +
+  ylab("Height in meters")
+``` 
+
+Tests for Sphericity (Homogeneity of Variance) :
+
+* Bartlett test Hypothesis:
+ + $H_0$ : The Variances across groups are Homogenous
+ + $H_1$ : The Variances across groups are not Homogenous
+
+```{r}
+bartlett.test(Height ~ Country, data = height.DF)
+```
+
+We do not reject the $H_0$.
+
+* Fligner-Killeen (median) test Hypothesis:
+  + $H_0$ : The Variances in each of the groups are the same
+  + $H_1$ : The Variances in each of the groups are not the same
+
+```{r}
+fligner.test(Height ~ Country, data = height.DF)
+```
+
+We do not reject the $H_0$.
+
+* and Levene (median) test Hypothesis:
+  + $H_0$ : The Variances across groups are Homogenous
+  + $H_1$ : The Variances across groups are not Homogenous
+
+```{r}
+leveneTest(Height ~ Country, data = height.DF) ## Levene (median) test 
+leveneTest(Height ~ Country, data = height.DF,center=mean) ## Levene (mean) test 
+
+```
+
+
+```{r}
+
+oneway.test(Height ~ Country,data = height.DF) 
+
+summary(aov(Height ~ Country,data = height.DF))
+
+
+```
+
+It is obvious by the plot that there is a difference in the mean Hight of these 3 countries.
+The p-value<0.001 shows that there is a statistically significant difference.
+
+#### Kruskal-Wallis test
+
+A non parametric equivalent to the One-Way ANOVA is Kruskal-Wallis test.
+
+```{r}
+data("InsectSprays")
+
+ggplot(InsectSprays, aes(x = as.factor(spray), y = count)) +
+  geom_boxplot(fill = "green", colour = "red") + xlab("Country") +
+  ylab("Height in meters")
+
+kruskal.test(count ~ spray,data = InsectSprays)
+```
+
+
+## Quantify the association between two paired samples
+
+The Correlation Analysis for Categorical variables we use Contingency Coefficients, for Normally distributed samples Pearson  and Spearman and Kendal correlation for non parametric.
+
+### Contigency Coefficients
+
+To quantify the association two paired Categorical samples we use the Contingency coefficients. 
+In the `vcd` library the `assocstats()` function computes the Pearson chi-Squared test, the Likelihood Ratio chi-Squared test, the phi coefficient (if table 2x2), the contingency coefficient and Cramer's V for possibly stratified contingency tables.
+
+Example:
+
+```{r,echo=FALSE}
+data("Arthritis")
+kable(head(Arthritis))
+tab <- xtabs(~Improved + Treatment, data = Arthritis)
+kable(head(tab))
+summary(assocstats(tab))
+```
+
+
+
+### Pearson Correlation
+
+For two Normally distributed paired samples if we want to check the association and quantify it then the Pearson Correlation. The correlation coefficient of two variables in a data sample is their covariance divided by the product of their individual standard deviations. It is a normalized measurement of how the two are linearly related.
+
+Formally, the sample correlation coefficient is defined by the following formula, where $S_X= \sum_{i=1}^{n} (x_i - \bar x)^2$ and $S_Y= \sum_{i=1}^{n} (y_i - \bar y)^2$ are the sample standard deviations, and $S_{XY}=\sum_{i=1}^{n} (x_i - \bar x)(x_i - \bar y)$ is the sample covariance. 
+
+$r_{XY} = \frac{\sum_{i=1}^{n} (x_i - \bar x)(x_i - \bar y)}{\sqrt{\sum_{i=1}^{n} (x_i - \bar x)^2} \sqrt{\sum_{i=1}^{n} (y_i - \bar y)^2}}$
+
+Example.
+
+```{r}
+
+BMI= matrix(c(1,58,115,2,59,117,3,60,120,4,61,123,5,62,126,6,63,129,7,64,132,8,65,135,9,
+              66,139,10, 67,142,11, 68,146,12, 69,150,13, 70,154,14, 71,159,15, 72,164 ) , 
+            ncol = 3 ,byrow = T, dimnames = list(c(),c("ID","Height","Weight")) )
+
+
+cor.test(BMI[,2],BMI[,3],method = "pearson")
+
+```
+
+As we can see we get a value close to 1 meaning a high positive association.
+Generally from the Pearson's rho we get two kinds of information :
+
+* the sign of the association (positive or negative)
+* the magnitude of the association (the closer to zero the weaker it is)
+
+
+
+
+### Spearman and Kendal correlation
+
+A Spearman correlation is used when one or both of the variables are not assumed to be normally distributed and interval (but are assumed to be ordinal). 
+The values of the variables are converted in ranks and then correlated. 
+
+```{r}
+
+cor.test(USJudgeRatings$CONT ,USJudgeRatings$INTG,method = "spearman")
+
+cor.test(USJudgeRatings$CONT ,USJudgeRatings$INTG,method = "kendal")
+
+```
+
+
+## Simple Linear Regression Analysis.
+
+
+We can simulate a Data Frame to work on.
+
+```{r simulate_Regression_data}
+
+set.seed(123)
+Males<-rnorm(50, 1.8, 0.10)
+Females<-rnorm(50, 1.65, 0.1)
+Height<-round(c(Males,Females),2)
+Gender<-factor(c(rep(0,50),rep(1,50)) )
+levels(Gender)<-c("Male","Female")
+e<- rnorm(100,0,5)
+Weight<-round( 25*Height^2 -5*as.integer(Gender) + e)
+
+BMI.DF= data.frame(Weight,Height,Gender)
+
+BMI.DF = BMI.DF[sample(nrow(BMI.DF)),]
+rm(e,Females,Males,Gender,Height,Weight)
+```
+
+We have a Data Frame of 50 women and 50 men and their Height-Weight measurements, let's take a look into.
+
+
+```{r First_Look_At_The_Data}
+kable(head(BMI.DF,10))
+str(BMI.DF)
+summary(BMI.DF)
+```
+
+
+With what we know till we can make several Statistical Analyses and answer many questions.
+Such as :
+
+* Is Height Normally Distributed?
+    + Shapiro Wilk
+    + Density (or Histogram) Plot
+   
+   
+```{r Normality_test_for_Height}
+
+shapiro.test(BMI.DF$Height)
+
+ggplot(BMI.DF,aes(Height)) + 
+  geom_histogram(color= "Purple",bins=10)   +  
+  labs(title= "Height Histogram") 
+
+ggplot(BMI.DF,aes(Height)) + 
+  geom_density(color= "Purple",adjust= 1.1,fill="Pink",alpha = 0.45 ) +
+  labs(title= "Height Density Plot") 
+
+```
+
+
+
+* Is the Average weight of Men good (suppose a Healthy average is 77 Kilograms)
+      + One Sample t-test
+      + Density Plot
+    
+
+```{r t-test_for_men}
+
+t.test(BMI.DF[BMI.DF$Gender == "Male",]$Weight, mu=75)
+
+ggplot(BMI.DF[BMI.DF$Gender == "Male",],aes(Weight)) + 
+  geom_density(color= "Purple",adjust= 1.1,fill="Pink",alpha = 0.45)   +  xlim(45,115)  +
+labs(title= "Weight Density plot") 
+
+```
+
+*  Is the Average Height of Men equal to women?  
+    + Two Sample t-test
+    + Boxplot
+  
+
+```{r t-test_Men_VS_Women}
+t.test(BMI.DF[BMI.DF$Gender == "Male",]$Height, BMI.DF[BMI.DF$Gender == "Female",]$Height )
+
+ggplot(BMI.DF,aes(x = factor(Gender),Height)) + 
+    geom_boxplot(aes(fill=factor(BMI.DF$Gender))) +
+    xlab("Gender") + ggtitle("Height Boxplot Men VS Women") +
+    scale_fill_manual(name = "Gender", values = c("Blue","Red")
+                      , labels = c("0" = "Men", "1" = "Women"))
+```
+
+* How much are Height and Weight Correlated?
+    + Pearson Correlation
+    + Scatterplot
+  
+```{r Height_Weight_Correlation}
+
+cor(BMI.DF$Weight,BMI.DF$Height,method = "pearson")
+
+ggplot(BMI.DF,aes(y = Weight,x = Height)) + 
+  geom_point(color= "Purple") +  ## Control the points
+  labs(title= "Weight-Height Scatterplot") +
+  geom_smooth(method = "lm")
+  
+```
+
+
+How much information can we gather using correlation? 
+Not much... We want to know more than if there is a Correlation between 2 variables and how strong it is.
+
+The setting of a simple linear regression model is:
+
+* The Data
+* Depended Variable: Y ~ $N(\mu,\sigma^2)$
+* Independent variable $X_i$
+* The Model: $Y$ = $b_0$ + $b_1*X$ + $e$
+    + where  $e ~ N(0,\sigma^2)$
+    + and $b_1$ is the coefficient to be estimated
+
+
+An upgrade is Simple Linear Regression and the assumptions implied are :
+
+1. linearity and additivity of the relationship between dependent and independent variables.
+2. The mean of residuals is zero
+3. statistical independence of the errors
+4. homoscedasticity and normality of the errors
+5. The X variable and residuals are uncorrelated
+
+
+If we want suppose that `Weight` is the Dependent Variable and `Height` the Independent then we can fit a linear model of $Y$ = $b_0$ + $b_i*x_i$ + $e_i$ :
+
+* Y : Weight
+* X : Height
+
+```{r,echo=FALSE}
+reg<- read.csv(file = "C:/Users/Mike/Desktop/Statistical/R slides/2_GLM/DataSets/LungCapData.csv")
+
+kable(head(reg))
+str(reg)
+
+```
+
+
+```{r Fitting_Linear_Model}
+
+fit<-lm(LungCap~Height,data= reg)
+summary(fit)
+```
+
+
+* `Transforming Variables`
+
+$b_0$ is the intercept of the model. It is the averaged `Lung Capacity` for Height = 0 . But `Height` can't be equal to zero. A good way to deal with that is to Centralize the data (if it is necessary to interpret the intercept) meaning to add or subtract the mean (or minimum, maximum).
+
+$b_1$ is the slope of the model. It is the averaged increase in `Lung Capacity` for an increase in `Height` by 1. In our example the `Height` is measured in inches. 
+So the interpretation of the slope would be : 
+For the increase of 1 inch in height the average increase in `Lung Capacity` is  0.337157 Cubic Inches . 
+
+That interperetation was really awful, in both Statistical and Medical way. 
+We can transform the `Height` variable into cm so that it makes sense.
+What do we expect to happen after these trasformations? 
+The Intercept will go to the average Lung Capacity for average Height, and the slope will be divided by 100.
+
+
+```{r Fitting_Linear_Model2}
+fit<- lm(LungCap~I(Height-mean(Height)),data= reg)
+summary(fit)
+```
+
+Now let's check the assumptions:
+
+* The first is obvious that we assume linearity.
+
+* The second can be found by simply checking the mean of the residuals.
+
+```{r Mean_Of_Residuals}
+round(mean(fit$residuals),5) ## Rounded up to the fifth decimal
+
+```
+
+The Homoscedacity and the Normality of Residuals are shown in the plots below (plus the influence points plot).
+
+```{r}
+par(mfrow = c(2, 2))
+plot(fit)
+```
+
+In the first and third plot we check the Homoscedacity and the red lines should be straight.In our case there assumption is satisfied and there is no pattern.
+In the second (top right) we check the Normality the closer the point are in the line the better.
+In the fourth plot we observe that there are no outliers aka no influence points.
+
+There is an automated way to check the most important assumptions of the linear model.
+
+```{r}
+
+fit<- lm(Weight~I(100*(Height-mean(Height))),data= reg)
+
+library(gvlma)
+gvlma(fit)
+```
+
+But generally the plots are better.
+
+* The `Height` variable is uncorrelated to the residuals.
+
+```{r}
+cor.test(reg$Height, fit$residuals)
+```
+
+* The independence of residuals can be checked with the `acf()` function that checks Autocorrelation.
+
+```{r,message=FALSE}
+library(lmtest)
+library(lawstat)
+
+acf(fit$residuals) # plot of Autocorrelation
+runs.test(fit$residuals) # H0: Is autocorrelation Random? Yes
+dwtest(fit) # H0: Is autocorrelation zero? No
+```
+
+Two tests have failed.
+
+## Multiple Linear Regression
+
+Now we can go further by inserting more variables in a model.
+
+The setting of a Multiple linear regression model is:
+
+* Depended Variable: Y ~ $N(\mu,\sigma^2)$
+* Independent variables $X_i$
+* The Model: $Y$ = $b_0$ + $b_i*X_i$ + $e$
+    + where  $e ~ N(0,\sigma^2)$
+    + and $b_1$ is the coefficient to be estimated
+
+
+We have the same assumptions to check plus Multicollinearity
+
+1. linearity and additivity of the relationship between dependent and independent variables.
+2. The mean of residuals is zero
+3. statistical independence of the errors
+4. homoscedasticity and normality of the errors
+5. The X variable and residuals are uncorrelated
+6. check for multicollinearity.
+
+
+We wil use the LungCapData picked from github showing the lung Capaxity of 725 Children.
+
+```{r Multiple_Linear_Model_Dataset,echo=FALSE}
+LungData<- read.csv(file = "C:/Users/Mike/Desktop/Statistical/R slides/2_GLM/DataSets/LungCapData.csv")
+kable(head(LungData))
+str(LungData)
+```
+
+We will make a brief check on the Variables.
+
+```{r}
+ggplot(data = LungData , aes(x = LungData$LungCap) ) +geom_histogram(bins=15,colour="Purple")+
+  ggtitle("Lung Capacity Histogram") + xlab(" Lung Capacity")
+
+ggplot(data = LungData , aes(x = LungData$Age) ) +geom_histogram(bins=8,colour="Purple")
+
+ggplot(data = LungData , aes(x = LungData$Height) ) +geom_histogram(bins=14,colour="Purple")
+
+table(LungData$Smoke)
+
+pie <- ggplot(data = LungData,aes(x = factor(1), fill = factor(Smoke))) +
+  geom_bar(position = "stack")
+
+
+at <- as.numeric(cumsum(table(LungData$Smoke))-0.5*table(LungData$Smoke))
+labels <- paste(round(summary(LungData$Smoke)/ sum(summary(LungData$Smoke)),2 )*100 , "%" , sep = "")
+
+pie + coord_polar(theta = "y") + ylab("Frequencies") + labs(title = "Smoking percentage")  + 
+  annotate(geom = "text", y = at , x = 1, label = labels ) + xlab(" ") + 
+  scale_fill_manual(values= c("Green" , "Brown"),name  ="Smoking",labels=c("No", "Yes") ) 
+
+table(LungData$Gender)
+
+pie <- ggplot(data = LungData,aes(x = factor(1), fill = factor(Gender))) +
+  geom_bar(position = "stack")
+
+
+at <- as.numeric(cumsum(table(LungData$Gender))-0.5*table(LungData$Gender))
+labels <- paste(round(summary(LungData$Gender)/ sum(summary(LungData$Gender)),2 )*100 , "%" , sep = "")
+
+pie + coord_polar(theta = "y") + ylab("Frequencies") + labs(title = "Gender percentage")  + 
+  annotate(geom = "text", y = at , x = 1, label = labels )+ xlab(" ") + 
+  scale_fill_manual(values= c("Pink" , "Blue"),name  ="Gender",labels=c("Female", "Male") ) 
+
+
+table(LungData$Caesarean)
+
+pie <- ggplot(data = LungData,aes(x = factor(1), fill = factor(Caesarean))) +
+  geom_bar(position = "stack")
+
+
+at <- as.numeric(cumsum(table(LungData$Caesarean))-0.5*table(LungData$Caesarean))
+labels <- paste(round(summary(LungData$Caesarean)/ sum(summary(LungData$Caesarean)),2 )*100 , "%" , sep = "")
+
+pie + coord_polar(theta = "y") + ylab("Frequencies") + labs(title = "Caesarean percentage")  + 
+  annotate(geom = "text", y = at , x = 1, label = labels ) + xlab(" ") + 
+  scale_fill_manual(values= c("lightblue" , "purple"),name  ="Caesarean",labels=c("No", "Yes") ) 
+
+
+
+```
+
+Let's put a second variable in the model
+```{r}
+fit<- lm(data=LungData, LungCap ~ Age + Height )
+vif(fit)
+```
+
+### Multicollinearity
+We have to check for perfect multicollinearity. 
+Let's use all the variables in the `BMI` dataset. No variable should have a score over 4.
+
+```{r}
+fit<- lm(data=LungData, LungCap ~ Age + Height )
+vif(fit)
+```
+
+We can solve that by omitting the highly correlated variables
+We check the correlation plot (same as in Correlation Analysis) and choose one out of the groups of the highly  correlated variables.
+```{r}
+
+rm(mtcars)
+
+corrplot(cor(mtcars[,-1],method = "spearman"),method = "number",type = "upper")
+
+```
+
+Interpreted from below plot.
+Correlated pairs: 
+
+- disp, cyl, hp, wt
+- gear, am
+- hp, carb
+
+
+
+```{r}
+mod <- lm(mpg ~ disp + am + carb + qsec + drat, data=mtcars)
+vif(mod)
+```
+
+Now that we know our assumptions let start building a model.
+
+```{r}
+library(AER)
+data("HousePrices")
+
+```
+
+
+
+If we suppose that the mpg is our dependent Variable we observe that there is a high correlation with the cylinder number, the disposition, the weight and the Horse Power.
+
+Graphically we can see that the points are following a line.
+
+
+```{r}
+
+ggplot(mtcars, aes(wt, mpg)) + geom_point() + geom_smooth(method="lm",color="black",se = F,linetype = "dotted") + labs(title= "Scatterplot of Consumption Vs Weight")
+```
+
+But is there a change in the consumption between automatic and manual transmission?
+
+```{r}
+ggplot(mtcars, aes(wt, mpg, colour=factor(am))) + geom_point() + geom_abline(intercept = 37.32 , slope = -5.35) +geom_smooth(method="lm") + labs(title= "Scatterplot of Consumption Vs Weight (coloured by Transmission)") + scale_colour_discrete(name="Transmission",labels=c("Automatic", "Manual"))
+```
+
+As we can see there is a great difference in the slopes between the Manual and Automatic transmission
+
+
+```{r}
+library(MASS)
+fit <- lm(mpg~.,data=mtcars)
+step <- stepAIC(fit, direction="both")
+step$anova # display results 
+```
+
+
+
+```{r}
+ggplot(mtcars, aes(wt, mpg, colour=factor(mtcars$cyl))) + geom_point() + geom_smooth(method="lm",color="black",se = F) + labs(title= "Scatterplot of Consumption Vs Weight (coloured by cylinder count)")  + scale_colour_discrete(name="Cylinder Count",
+                       labels=c("4 Cylinders", "6 Cylinders", "8 Cylinders"))
+
+```
+
+
+```{r}
+fit=lm(mpg~wt, data=mtcars)
+pre <- predict(fit)
+ggplot(mtcars, aes(wt, mpg)) + geom_point(color="red") + geom_smooth(method="lm") + 
+  geom_segment(aes(x =wt , y =mpg , xend = wt, yend = pre)) + 
+  ylab("Consumption") + xlab("Weight(lb/1000)")+ labs(title = "Scatterplot of Consumption Vs Weight") 
+
+fit=lm(mpg~disp, data=mtcars)
+pre <- predict(fit)
+ggplot(mtcars, aes(disp, mpg)) + geom_point(color="red") + geom_smooth(method="lm") + 
+  geom_segment(aes(x =disp , y =mpg , xend = disp, yend = pre)) + 
+  ylab("Consumption") + xlab("Weight(lb/1000)")+ labs(title = "Scatterplot of Consumption Vs Disposition") 
+
+fit=lm(mpg~hp, data=mtcars)
+pre <- predict(fit)
+ggplot(mtcars, aes(hp, mpg)) + geom_point(color="red") + geom_smooth(method="lm") + 
+  geom_segment(aes(x =hp , y =mpg , xend = hp, yend = pre)) + 
+  ylab("Consumption") + xlab("Weight(lb/1000)")+ labs(title = "Scatterplot of Consumption Vs Horsepower") 
+```
+
+
+
+
+```{r}
+ggplot(mtcars, aes(hp, mpg,group=as.factor(cyl), colour=as.factor(cyl) )) + geom_point(color=as.factor(mtcars$cyl)) + geom_smooth(method="lm") 
+```
+
+
+
+
+
+
+
+# Tranforming Linear Regression
+## Checking The Data
+
+
+
+
+```{r, message=FALSE,echo=F}
+write.bibtex(file="references.bib")
+```
+
+
+# References
+

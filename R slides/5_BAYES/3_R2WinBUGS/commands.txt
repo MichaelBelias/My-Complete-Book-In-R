@@ -1,0 +1,90 @@
+# loading the library/package
+library(R2WinBUGS)
+# reading the data from a txt file
+estriol.ex <- read.table("estriol.txt", header=T)
+# n defining the sample size
+n<-nrow(estriol.ex)
+#
+# initial values
+# should be a list with one list for each chain
+#
+inits1<-list(  
+	list(a.star=0.0, b=0.0, tau=1.0)
+)
+detach(estriol.ex)
+# we attaching the estriol.ex in the main workspace (otherwize R2WinBUGS will not be able to see them)
+attach(estriol.ex)
+# defining the names of the data objects
+data.names<-c(names(estriol.ex) ,'n')
+# defining the names of the parameters we wish to monitor
+parameter.names <- c( 'a', 'a.star', 'b', 's2')
+# defining the directory of WinBUGS
+# usual directory
+#winbugs.dir <- "C:/Program Files (x86)/WinBUGS14"
+# my laptop directory
+winbugs.dir <- "D:/WinBUGS14"
+#
+# generating random samples using WinBUGS
+model1.sim <- bugs( data.names, inits1, model.file = "model.odc", parameters = parameter.names,
+n.chains = 1, n.iter = 3000, n.burnin=1000, n.thin=1,  bugs.directory = winbugs.dir, debug=F)
+#
+# output with 3 digits
+print(model1.sim,3)
+#
+names(model1.sim)
+
+#
+# function for creating trace and ergodic mean plots
+# 2013 April by Ioannis Ntzoufras
+#
+plot.trace <- function( bugs.object, nrow=5, ncol=NULL, ergodic=FALSE){ 
+	mcmc.output<-bugs.object$sims.matrix 
+	n.iter <- nrow(mcmc.output)
+	n.par  <- ncol(mcmc.output)
+	if (is.null(ncol)) ncol <- (n.par %/% nrow)+1*( (n.par %% nrow)!=0 )
+
+	par(mfcol=c(nrow,ncol) )
+	if (ergodic){ 
+		for (k in 1:n.par){ 
+			plot( cumsum(mcmc.output[,k])/1:n.iter, type='l', main=colnames(mcmc.output)[k]) }
+		
+	}else{
+		for (k in 1:n.par){ plot( mcmc.output[,k], type='l', main=colnames(mcmc.output)[k]) }
+	}
+}
+
+#
+# function for checking the centrality of zero
+# 2013 April by Ioannis Ntzoufras
+# 
+p0 <- function( bugs.object, digits=3){ 
+	mcmc.output<-bugs.object$sims.matrix 
+	n.iter <- nrow(mcmc.output)
+	n.par  <- ncol(mcmc.output)
+	mcmc.output<-mcmc.output[ , -n.par] 
+	temp<-apply( mcmc.output < 0, 2, mean)
+	res <- pmin( temp, 1-temp)
+	return( round(res,digits) )
+}
+
+# calculating the probability of zero to be central in the posterior densities
+p0(model1.sim)
+
+
+#
+# trace plots - in a window with 3 rows and 2 columns
+plot.trace( model1.sim,3,2)
+# ergodic mean plots - in a window with 3 rows and 2 columns
+plot.trace( model1.sim,3,2, ergodic=T)
+
+
+#
+detach(estriol.ex)
+# we attaching the estriol.ex in the main workspace (otherwize R2WinBUGS will not be able to see them)
+attach(estriol.ex)
+inits2<-list(  
+	list(a.star=0.0, b=0.0, tau=1.0), 
+list(a.star=0.0, b=0.0, tau=1.0)
+)
+model2.sim <- bugs( data.names, inits2, model.file = "model.odc", parameters = parameter.names,
+n.chains =2, n.iter = 3000, n.burnin=1000, n.thin=1,  bugs.directory = winbugs.dir, debug=F)

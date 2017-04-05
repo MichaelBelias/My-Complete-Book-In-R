@@ -1,0 +1,17 @@
+model estriol; 
+{
+#       definition of likelihood function
+#
+        for (i in 1:n) {
+                birth[i]~dnorm( mu[i], tau ); # random component
+                mu[i]<-a.star+b*(estriol[i]-mean(estriol[]));        # systematic component
+                                              #      & link function
+        }
+#       prior distributions
+#       
+        a.star~dnorm( 0, 1.0E-04 ); # normal prior for a
+        b~dnorm( 0, 1.0E-04 ); # normal prior for b
+        tau~dgamma( 1.0E-04 , 1.0E-04 ); # gamma prior for precision
+        s2<-1/tau;
+        a<-a.star-b*mean(estriol[]); 
+}
