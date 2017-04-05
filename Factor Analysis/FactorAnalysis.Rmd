@@ -1,0 +1,442 @@
+---
+title: "Factor Analysis"
+author: "Mpelias Michael"
+date: "27 March 2016"
+output:
+  pdf_document:
+    highlight: pygments
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
+  html_document:
+    css: APAStyle.css
+    fig_caption: yes
+    highlight: espresso
+    theme: null
+  word_document:
+    reference: APA.docx
+fontsize: 12pt
+csl: Harvard2.csl
+---
+
+\newpage
+
+# Introduction
+
+## Goal of this lesson
+
+
+The purposes of Factor Analysis are:
+
+* to find the hidden factors behind observed variables: The hidden factors cannot measured directly, but should be "natural groupings" of observed variables
+* The reduction of the number of variables inter-correlated: In this meaning, it resembles the principal component analysis.
+
+
+The goal of this lesson is :
+
+* To comprehend the intuition behind the Factor Analysis
+* To understand the procedure in R
+* And to learn from an example how to make a valid Factor Analysis
+
+
+
+## Description of the file that will be used
+```{r ,echo=FALSE}
+library(foreign)
+
+Factor.Analysis.Data<- read.dta("GreeckStudyACS_Example.dta")
+fa <- Factor.Analysis.Data[,47:61]
+```
+
+
+The `GREECS` file contains variables (d1 - d15) that are used for psychological evaluation of patients with acute coronary syndrome (GREECS study). we have `r dim(fa)[1]` observations and `r dim(fa)[2]` variables. 
+Below, are detailed descriptions of these variables:
+
+"How many days (in the last 90 days) ...." :
+
+* d1: You were not satisfied with your life
+* d2: Did you find it difficult to sleep at night
+* d3: Did you feel taking more responsibility than you can
+* d4: People in your environment appreciated you and respected you
+* d5: Were you satisfied with your socializing
+* d6: Were you satisfied with the performance at work
+* d7: Did you feel free in your work
+* d8: Did you feel your work is penetrating your personal life
+* d9: Did you have financial security and peace of mind from your work
+* d10: Were you satisfied with your income
+* d11: Did you have enough time for yourself
+* d12: The communication with your partner  was good
+* d13: Did you feel oppressed in your relationship
+* d14: You relied on your family for a problem
+* d15: Your family environment had been influencing your decision making
+
+All these variables are categorical with five categories (**0: 0-5, 1: 5-15, 2: 15-45, 3: 45-60, 4:> 60 days aka ordinal**) this categorization was made on (almost) Normally Distributed data. Finally the variable **cvd_event** expresses recurrence cardiovascular event one month after the first episode (1 = yes, 0 = no).
+
+#Factor Analysis 
+## Checking if our data are suitable for Factor Analysis
+
+### 1st Prrequisite: sample size & Correlation adequacy
+Similarly to PCA a sample size of 50 observations is very poor, 200 is fair, 300 is good, 500 very good, and
+more than 1,000 excellent
+
+Our data in order to be suitable for factor analysis they must be correlated enough (about 30-40% of total correlation table elements).
+
+```{r , fig.height= 6,fig.width= 9,echo=FALSE}
+library(corrplot)
+
+corrplot(corr = cor(fa,use = "na.or.complete"), cl.cex = 0.75,tl.cex = 0.75,number.cex = 0.75,
+         type = "lower",method = "number",
+         title = "Corrplot of variables d1 to d15",diag = F ,mar =  c(0,0,2,0))
+```
+
+From the results it is concluded that we have a sufficient number of correlations between variables with |r| > 0.3 in order to carry out factor analysis that will result in good results for interpretation.
+
+
+### Kaiser-Meyer-Olkin's sampling adequacy criteria
+
+We proceed to the Kaiser-Meyer-Olkin test. Kaiser-Meyer-Olkin's sampling adequacy criterion is a measure of data correlation of the correlations matrix or variance-covariance matrix and takes values between  (0,1).  The proposed minimum price to be taken in order for the factor analysis to be credible is 0.5, while values> 0.8 are considered to be very good. 
+
+The Kaiser-Meyer-Olkin test with MSA (individual measures of sampling adequacy for each item), is not implemented into a package, but it can be easily created with the following function. 
+
+```{r ,comment="" }
+kmo <- function(x)
+{
+
+r <- cor(x,use = "na.or.complete") # Correlation matrix
+r2 <- r^2 # Squared correlation coefficients
+i <- solve(r) # Inverse matrix of correlation matrix
+d <- diag(i) # Diagonal elements of inverse matrix
+p2 <- (-i/sqrt(outer(d, d)))^2 # Squared partial correlation coefficients
+diag(r2) <- diag(p2) <- 0 # Delete diagonal elements
+KMO <- sum(r2)/(sum(r2)+sum(p2))
+MSA <- colSums(r2)/(colSums(r2)+colSums(p2))
+return(list(KMO=round(KMO,3), MSA=round(MSA,3)))
+}
+kmo(fa)
+
+```
+
+Variables with MSA being below 0.5 indicate that the item does not belong to a group and should be removed from the analysis.
+
+### Sphericity of Bartlett test
+
+Another criterion is sphericity of Bartlett test a statistical test with null hypothesis:
+
+* ($H_0$): The correlation matrix is the identity matrix (i.e. the diagonal values are equal to 1 and all others 0)
+
+* ($H_1$): The correlation matrix and the Covariance- Variance matrices are not equal to identity matrices, thus there are correlations between the analysis variables.
+
+The Barlett Sphericity Test also can be created easily with the following function:
+
+```{r}
+Bartlett.sphericity.test <- function(x)
+{
+method <- "Bartlett's test of sphericity"
+object.name <- deparse(substitute(x))   ## Save the Name of the Matrix (if any)
+x <- subset(x, complete.cases(x)) # Omit missing values
+n <- nrow(x)       # count Row length
+p <- ncol(x)          # count Column length
+chisq <- (1-n+(2*p+5)/6)*log(det(cor(x)))
+names(chisq) <- "X-squared"
+df <- p*(p-1)/2
+names(df) <- "df"
+
+p.value <- pchisq(chisq, df, lower.tail=FALSE)
+
+return(structure(list(statistic=chisq, parameter=df, p.value=p.value,
+method=method, data.name=object.name), class="htest"))
+} 
+```
+
+```{r,echo=FALSE,comment= ""}
+Bartlett.sphericity.test(fa)
+```
+
+KMC test had a value of `r kmo(fa)$KMO`> 0.5  showing that our data are correlated enough to make a factor analysis. Also the p value Bartlett's test is (p <0.001) which indicates that we accept the null hypothesis at a significance level of a = 0.05, so the correlation matrix is not the identity matrix and it can be concluded that our data are sufficiently correlated with each other.
+
+The presence of multicollinearity (variables with high correlation between them) may cause problems in factor analysis as it is impossible to assess the unique contribution of highly correlated variables with the factors. A first approach is to identify the variables that have a large coefficient of correlation between them (r> 0.9) and remove them from the analysis. A second way to find out if we have multicollinearity is to check the Det of the correlation matrix. 
+A determinant value greater than 0.000001 means that our data do not show multicollinearity and may proceed with the factor analysis. In our case, the value of the determinant is $`r round(det(cor(fa,use= "na.or.complete")), 5)`$ so our data do not have multicollinearity.
+
+# Starting The Factor Analysis
+## A First Model
+
+The command for Factor Analysis is `factanal` and we add the following options ` factors  = 10 ,na.action = na.omit , rotation = "none , factors  = 10" `. The default factoring method is Maximum Likelihood ,where the multi-variable assumption of Normality is considered to be `TRUE`.Applying the  maximum likelihood  method our variables are considered  continuous or bivalent. In this example, because we have psychometric test, the ordinal categorical variables with more than 5 categories can be considered to come from a normal distribution, we proceed to the analysis.
+
+```{r ,echo=F,comment=""}
+library(knitr)
+library(psych)
+fa<-subset(fa, complete.cases(fa))
+a=fa(cor(fa, use = "na.or.complete"),n.obs = 902 , fm="ml", nfactors=10, rotate="none" , scores = "regression") 
+
+
+Eigenvalue = apply(a$loadings^2,2,sum)
+
+Difference = vector()
+for (i in 1:length(colnames((a$loadings)))) Difference[i] = Eigenvalue[i] - Eigenvalue[i+1] 
+
+Proportion = Eigenvalue/sum(Eigenvalue)
+
+df= data.frame(
+               Eigenvalue = apply(a$loadings^2,2,sum),
+               Difference = Difference , 
+               Proportion = Proportion,
+               Cumulative = cumsum(Proportion)
+               )
+kable(df,caption = "Factor Analysis / correlation")
+
+n <- nrow(fa)       # count Row length
+p <- ncol(fa)       # count Column length
+dif= p*(p-1)/2
+names(dif) <- "Degrees Of Freedom"
+chisq <- (1-n+(2*p-1)/6)*log(det(cor(fa)))
+
+p.value <- pchisq(chisq, dif, lower.tail=FALSE)
+names(chisq) <- "Chi-squared"
+structure(list(statistic=chisq, parameter=dif, p.value=p.value,
+method= paste("LR Test: Indepented vs. Saturated"), data.name= paste("")), class="htest")
+
+if(a$dof >0){
+dif= a$dof
+names(dif) <- "Degrees Of Freedom"
+chisq <- a$STATISTIC
+names(chisq) <- "Chi-squared"
+p.value <- pchisq(chisq, dif, lower.tail=FALSE)
+
+structure(list(statistic=chisq, parameter=dif, p.value=p.value ,
+method= paste("LR Test: ", a$factors, "Factors  vs. Saturated"), data.name= paste("")), class="htest")
+
+
+loadings = round(a$loadings[1:length(row.names(a$loadings)), 1:length(colnames(a$loadings))] , 4)
+Uniqueness= a$uniquenesses
+df2 = data.frame(cbind(loadings,Uniqueness))
+
+pander(round(df2 , 4) , 
+       caption = "Factor Loadings (pattern matrix) and Unique Variances", 
+       split.table = 75 ) 
+}
+```
+
+In the first table we take the Eigenvalues, the Difference, the Proportion and the Cumulative proportion.  After that an LR-test Independent vs Saturated. 
+
+
+
+
+```{r}
+library(pander)
+loadings = round(a$loadings[1:length(row.names(a$loadings)), 1:length(colnames(a$loadings))] , 4)
+Uniqueness= a$uniquenesses
+df2 = data.frame(cbind(loadings,Uniqueness))
+
+pander(round(df2 , 4) , 
+       caption = "Factor Loadings (pattern matrix) and Unique Variances", 
+       split.table = 75 ) 
+
+```
+
+In the second table the Loadings are presented as evaluated by factor analysis. Thus estimated 10 new parameters whose loadings (which are coefficients expressing the relationship of each factor to each variable) are shown in the ten columns and the last column shows the Uniqueness of each initial variable, which expresses the percentage of volatility of each original variable that is not explained by the factorial model. 
+The communality of the initial variables is the percentage of variability of each variable expressed by the factorial model and is calculated by Subtracting 1 minus the  Uniqueness of each variable. Thus, the following table shows that the Uniqueness of  of the first variable is `r paste( round(df2$Uniqueness[1]*100,2),"%")` so the Factor is interpreting the  (1-`r paste( round(df2$Uniqueness[1]*100,2),"%")` = `r paste(  round(100 - df2$Uniqueness[1]*100,2),"%")`) of the `r row.names(a$loading )[1]` and leaves `r paste( round(df2$Uniqueness[1]*100,2),"%")` unexplained.
+
+
+For the second variable of the model the analysis considers that interprets `r paste((100-df2$Uniqueness[2]*100), sep="%")` of the variation, which is vary small so if we find a small Uniqueness to a variable of interest we may  need to add one or more factors in our analysis to the increase that value.
+
+Finally we may check the Degrees of Freedom of the model which are `r a$dof`, so the model is already Saturated and needs a reduction in the factors. `But how many shall we keep?`
+
+It is proposed to take the same amount of Factors as of Main Components from a PCA.
+In PCA we pick either by Kaiser's criterion or by Scree-plots. 
+
+```{r,echo=FALSE}
+pca_anal<-prcomp(~.,data=fa ,na.action = na.omit,scale. = T,scores = T,rotation = "promax") 
+
+ggscreeplot <- function(pca_odject, type = c('norm','pev', 'cev')) 
+{
+  require(ggplot2)
+  type <- match.arg(type)
+  d <- pca_odject$sdev^2
+  yvar <- switch(type, 
+                 norm= d,
+                 pev = d / sum(d), 
+                 cev = cumsum(d) / sum(d))
+
+  yvar.lab <- switch(type,
+                     norm= "Eigenvalue",
+                     pev = 'proportion of explained variance',
+                     cev = 'cumulative proportion of explained variance')
+
+  df <- data.frame(PC = 1:length(d), yvar = yvar)
+
+  ggplot(data = df, aes(x = PC, y = yvar)) + 
+    xlab('principal component number') + ylab(yvar.lab) +
+    geom_point() + geom_path(colour="red") + geom_bar(stat= "identity",fill="black",colour="orange",alpha=0.75) 
+}
+
+ggscreeplot(pca_anal,"norm") + ggtitle("Screeplot For the 1st PCA")
+```
+
+The kaiser criterion `r pca_anal$sdev^2` proposes that we should keep 3 variables, while the `Screeplot` 5. 
+We will follow the intuitive path of the scree-plot. 
+
+
+```{r, echo=FALSE,comment=""}
+
+
+fa<-subset(fa, complete.cases(fa))
+
+a=fa(cor(fa, use = "na.or.complete"),n.obs = 902 , fm="ml", nfactors=5, rotate="none" , scores = "regression") 
+
+
+Eigenvalue = apply(a$loadings^2,2,sum)
+
+Difference = vector()
+for (i in 1:length(colnames((a$loadings)))) Difference[i] = Eigenvalue[i] - Eigenvalue[i+1] 
+
+Proportion = Eigenvalue/sum(Eigenvalue)
+
+df= data.frame(
+               Eigenvalue = apply(a$loadings^2,2,sum),
+               Difference = Difference , 
+               Proportion = Proportion,
+               Cumulative = cumsum(Proportion)
+               )
+kable(df,caption = "Factor Analysis / correlation")
+
+n <- nrow(fa)       # count Row length
+p <- ncol(fa)       # count Column length
+dif= p*(p-1)/2
+names(dif) <- "Degrees Of Freedom"
+chisq <- (1-n+(2*p-1)/6)*log(det(cor(fa)))
+
+p.value <- pchisq(chisq, dif, lower.tail=FALSE)
+names(chisq) <- "Chi-squared"
+structure(list(statistic=chisq, parameter=dif, p.value=p.value,
+method= paste("LR Test: Indepented vs. Saturated"), data.name= paste("chi2(",dif,") = ",round(chisq,2) , sep = "")), class="htest")
+
+```
+
+
+
+```{r , echo=FALSE, comment=""}
+
+if(a$dof >0){
+dif= a$dof
+names(dif) <- "Degrees Of Freedom"
+chisq <- a$STATISTIC
+names(chisq) <- "Chi-squared"
+p.value <- pchisq(chisq, dif, lower.tail=FALSE)
+
+structure(list(statistic=chisq, parameter=dif, p.value=p.value ,
+method= paste("LR Test: ", a$factors, "Factors  vs. Saturated"), data.name= paste("chi2(",dif,") = ",round(chisq,2) , sep = "")), class="htest")
+
+}
+
+
+loadings = round(a$loadings[1:length(row.names(a$loadings)), 1:length(colnames(a$loadings))] , 4)
+Uniqueness= a$uniquenesses
+df2 = data.frame(cbind(loadings,Uniqueness))
+
+pander(round(df2 , 4) , 
+       caption = "Factor Loadings (pattern matrix) and Unique Variances", 
+       split.table = 75 ) 
+```
+
+From the above table  we shall write the statistical model of the factors (the model coefficients are listed in Table 2 charges) .
+
+`r row.names(a$loadings)[1]`= `r paste(round(a$loadings[1,1:length(colnames(a$loadings))] ,4 ) , colnames(a$loadings), sep="*", collapse =  " + ")`
+
+`r row.names(a$loadings)[2]`= `r paste(round(a$loadings[2,1:length(colnames(a$loadings))] ,4 ) , colnames(a$loadings), sep="*", collapse =  " + ")`
+
+
+`r row.names(a$loadings)[3]`= `r paste(round(a$loadings[3,1:length(colnames(a$loadings))] ,4 ) , colnames(a$loadings), sep="*", collapse =  " + ")`
+
+
+`r row.names(a$loadings)[4]`= `r paste(round(a$loadings[4,1:length(colnames(a$loadings))] ,4 ) , colnames(a$loadings), sep="*", collapse =  " + ")`
+
+
+`r row.names(a$loadings)[5]`= `r paste(round(a$loadings[5,1:length(colnames(a$loadings))] ,4 ) , colnames(a$loadings), sep="*", collapse =  " + ")`
+
+
+we have estimated the parameters of the factorial model without rotation. In order to apply rotation
+
+```{r , echo=FALSE, comment="", message=FALSE}
+
+a=factanal(~., data = fa, factors  = 5,rotation = "none",na.action = na.omit, scores = "regression")
+
+
+
+Eigenvalue = apply(a$loadings^2,2,sum)
+
+Difference = vector()
+for (i in 1:length(colnames((a$loadings)))) Difference[i] = Eigenvalue[i] - Eigenvalue[i+1] 
+
+Proportion = Eigenvalue/sum(Eigenvalue)
+
+df= data.frame(
+               Eigenvalue = apply(a$loadings^2,2,sum),
+               Difference = Difference , 
+               Proportion = Proportion,
+               Cumulative = cumsum(Proportion)
+               )
+kable(df,caption = "Factor Analysis / correlation")
+
+n <- nrow(fa)       # count Row length
+p <- ncol(fa)       # count Column length
+dif= p*(p-1)/2
+names(dif) <- "Degrees Of Freedom"
+chisq <- (1-n+(2*p-1)/6)*log(det(cor(fa)))
+
+p.value <- pchisq(chisq, dif, lower.tail=FALSE)
+names(chisq) <- "Chi-squared"
+structure(list(statistic=chisq, parameter=dif, p.value=p.value,
+method= paste("LR Test: Indepented vs. Saturated"), data.name= paste("chi2(",dif,") = ",round(chisq,2) , sep = "")), class="htest")
+
+if(a$dof >0){
+dif= a$dof
+names(dif) <- "Degrees Of Freedom"
+chisq <- a$STATISTIC
+names(chisq) <- "Chi-squared"
+p.value <- pchisq(chisq, dif, lower.tail=FALSE)
+
+structure(list(statistic=chisq, parameter=dif, p.value=p.value ,
+method= paste("LR Test: ", a$factors, "Factors  vs. Saturated"), data.name= paste("chi2(",dif,") = ",round(chisq,2) , sep = "")), class="htest")
+
+}
+
+
+loadings = round(a$loadings[1:length(row.names(a$loadings)), 1:length(colnames(a$loadings))] , 4)
+Uniqueness= a$uniquenesses
+df2 = data.frame(cbind(loadings,Uniqueness))
+
+pander(round(df2 , 4) , 
+       caption = "Factor Loadings (pattern matrix) and Unique Variances", 
+       split.table = 75 ) 
+```
+
+The interpretation of the factors is done by controlling of elements of the matrix after the rotation and the correlation of variables with the greatest burden in each factor. Thus we have :
+
+* The first factor is highly correlated with variables d4, d5, d12 and d14 expressing satisfaction derived by the person from the social environment (family, partner, social relationships) and may be characterized as __positive social environment__
+
+* The second factor is highly correlated with variables d1, d2, d3, d13 and d15 which are associated with symptoms of anxiety and depression, and we can assume that is the factor of __Anxiety-Depression__
+
+* The  third factor is highly correlated with variables d9, d10 and d11, which are related to the work and can be considered as reflecting the __Job satisfaction__
+
+* The fourth factor most associated with job satisfaction d6, d7, d8 , d11 and we believe that is the factor __working environment__
+
+* The fifth factor is highly correlated with d12 and d13 questions and we believe that is the factor __partner relationship satisfaction__
+
+
+
+Now that we have our scores we can save them as predicted scores over our dataset. 
+The reason we are doing this is in order to check if these Factor variable are affecting after all the recurrence cardiovascular event or not. 
+So we shall create a new Data.Frame with the predicted values 
+
+```{r,echo=FALSE , comment="" }
+
+a=fa(cor(fa),nfactors=5, fm ="ml", scores = "regression", rotate = "varimax" )
+
+
+
+df=data.frame(cbind(predict.psych(a ,fa),cvd_event= Factor.Analysis.Data$cvd_event[as.numeric(row.names(fa))]))
+
+fit<- glm(cvd_event~. , data=df, "binomial")
+summary(fit)
+```
+
