@@ -1,0 +1,164 @@
+---
+title: "Multiple testing In R"
+author: "Mpelias Michael"
+date: "26 March 2016"
+output:
+  pdf_document:
+    highlight: pygments
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
+  html_document:
+    css: APAStyle.css
+    fig_caption: yes
+    highlight: espresso
+    theme: null
+  word_document:
+    reference: APA.docx
+fontsize: 12pt
+csl: Harvard2.csl
+---
+
+
+
+#  Why is multiple testing a problem?
+
+
+Say you have a set of hypotheses that you wish to test simultaneously. The first idea thatmight come to mind is to test each hypothesis separetaly , using some level of significance $\alpha$ .At first blush, this doesn’t seem like a bad idea. However, consider a case where you have 20 hypotheses to test, and a significance level of 0.05. What’s the probability of observing at least one significant result just due to chance? 
+
+
+P(at least one significant result) = 1 - P( no significant results) = 
+$1-(1-0.05)^{20} \approx 0.64$ 
+
+So, with 20 tests being considered, we have a 64% chance of observing at least one significant result, even if all of the tests are actually not significant. In genomics and other biology-related fields, it’s not unusual for the number of simultaneous tests to be quite a bit larger than 20... and the probability of getting a significant result simply due to chance keeps going up.Methods for dealing with multiple testing frequently call for adjusting $\alpha$ in some way, so that the probability of observing at least one significant result due to chance remains belowyour desired significance level.
+
+
+
+## The Bonferroni correction
+
+The Bonferroni correction sets the significance cut-off at $\frac{\alpha}{n}$. For example, in the example above, with 20 tests and $\alpha$ = 0.05, you’d only reject a null hypothesis if the p-value is less than 0.0025. The Bonferroni correction tends to be a bit too conservative. To demonstrate this, let’s calculate the probability of observing at least one significant result when using thecorrection just described: 
+
+P(at least one significant result) = 1-P(no significant results)= 1- $(1-0.0025)^{20} \approx 0.0488$
+
+Here, we’re just a shade under our desired 0.05 level. We benefit here from assuming that all tests are independent of each other. In practical applications, that is often not the case. Depending on the correlation structure of the tests, the Bonferroni correction could be extremely conservative, leading to a high rate of false negatives.
+
+
+## The False Discovery Rate
+
+In large-scale multiple testing (as often happens in genomics), you may be better served by controlling the false discovery rate (FDR). This is defined as the proportion of false positives among all significant results. The FDR works by estimating some rejection region so that, on average, FDR < $\alpha$.
+
+
+## The positive False Discovery Rate
+The positive false discovery rate (pFDR) is a bit of a wrinkle on the FDR. Here, you try to control the probability that the null hypothesis is true, given that the test rejected the null. 
+This method works by first fixing the rejection region, then estimating $\alpha$ , which is quitethe opposite of how the FDR is handled. For gory levels of detail, see the Storey paper the professor has linked to from the class website.
+
+
+
+# Comparing the three 
+First, let’s make some data. For kicks and grins, we’ll use the random normals in such a way that we’ll know what the result of each hypothesis test should be.
+
+```{r}
+
+set.seed(6970222)
+x <- c(rnorm(900), rnorm(100, mean = 3))
+p <- pnorm(x, lower.tail = F)
+```
+These functions should all be familiar from the first few weeks of class. Here, we’ve made a vector, x, of length 1000. The first 900 entries are random numbers with a standard normal distribution. The last 100 are random numbers from a normal distribution with mean 3 and sd 1. Note that I didn’t need to indicated the sd of 1 in the second bit; it’s the default value. 
+The second line of code is finding the p-values for a hypothesis test on each value of x. The hypothesis being tested is that the value of x is not different from 0, given the entries are drawn from a standard normal distribution. The alternate is a one-sided test, claiming that the value is larger than 0.
+Now, in this case, we know the truth: The first 900 observations should fail to reject the null hypothesis: they are, in fact, drawn from a standard normal distribution and any difference between the observed value and 0 is just due to chance. The last 100 observations
+should reject the null hypothesis: the difference between these values and 0 is not due to chance alone.
+Let’s take a look at our p-values, adjust them in various ways, and see what sort of results we get. Note that, since we all will have our own random vectors, your figures will probably be a different from mine. They should be pretty close, however.
+
+
+##  No corrections
+
+```{r}
+test <- p > 0.05
+```
+
+The two summary lines will give me a count of how many p-values where above and
+below .05. Based on my random vector, I get something that looks like this:
+
+```{r}
+summary(test[1:900])
+
+summary(test[901:1000])
+
+```
+
+The type I error rate (false positives) is 46/900 = 0.0511. The type II error rate (false negatives) is 12/100 = 0.12. Note that the type I error rate is awfully close to our $\alpha$, 0.05.
+This isn’t a coincidence: $\alpha$ can be thought of as some target type I error rate.
+
+
+## Bonferroni correction
+
+We have $\alpha$ = 0.05, and 1000 tests, so the Bonferroni correction will have us looking for
+p-values smaller than 0.00005:
+
+```{r}
+bonftest <- p > 0.00005
+summary(bonftest[1:900])
+summary(bonftest[901:1000])
+```
+
+
+
+Here, the type I error rate is 0/900 = 0 , but the type II error rate has skyrocketed to 0.80. We’ve reduced our false positives at the expense of false negatives. 
+Ask yourself , which is worse? False positives or false negatives? 
+
+**Note: there isn’t a firm answer. It really depends on the context of the problem and the consequences of each type of error.**
+
+
+## FDR
+
+
+For the FDR, we want to consider the ordered p-values. We’ll see if the kth ordered p-value is larger than $\frac{k0.05}{1000}$
+```{r}
+psort <- sort(p)
+fdrtest <- NULL
+for (i in 1:1000)
+fdrtest <- c(fdrtest, p[i] > match(p[i],psort) * .05/1000)
+```
+
+Let’s parse this bit of code. I want the string of trues and falses to be in the same order as the original p-values, so we can easily pick off the errors. I start by creating a separate variable, psort, which holds the same values as p, but sorted from smallest to largest. 
+
+Say I want to test only the first entry of p:
+
+```{r}
+p[1] > match(p[1],psort) * .05/1000
+```
+
+
+
+p[1] picks off the first entry from the vector p. match(p[1],psort) looks through the vector psort, finds the first value that’s exactly equal to p[1], and returns which entry of the vector it is. In my random vector, match(p[1], psort) returns 697. 
+That means that, if you put all the p-values in order from smallest to largest, the 697th largest value is the one that appears first in my vector. The value you get might differ pretty wildly in this case. Anyhow, on to see how the errors go:
+
+```{r}
+summary(fdrtest[1:900])
+summary(fdrtest[901:1000])
+```
+
+
+Now we have a type I error rate of 3/900 = 0.0033. The type II error rate is now 30/70 = 0.30, a big improvement over the Bonferroni correction!
+
+## pFDR
+
+The pFDR is an awful lot more involved, coding-wise. Mercifully, someone’s already written the package for us.
+
+```{r}
+library(qvalue)
+pfdrtest <- qvalue(p)$qvalues > .05
+```
+
+The qvalue function returns several things. By using $qvalues after the function, it says we only really want the bit of the output they call ”qvalues”.
+
+
+```{r}
+summary(pfdrtest[1:900])
+
+summary(pfdrtest[901:1000])
+
+```
+
+I seem to get the same results as in the regular FDR, at least at the 5% level. Let’s take a look at the cumulative number of significant calls for various levels of $\alpha$ and the different
+corrections:

@@ -1,0 +1,100 @@
+---
+title: "How to Calculate bete Coefficients"
+author: "Belias Michael"
+date: "4 April 2016"
+output:
+  pdf_document:
+    highlight: pygments
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
+  html_document:
+    css: APAStyle.css
+    fig_caption: yes
+    highlight: espresso
+    theme: null
+  word_document:
+    reference: APA.docx
+fontsize: 12pt
+csl: Harvard2.csl
+---
+
+
+
+\newpage 
+
+
+# Introduction
+
+
+# Beta Calculation
+
+
+The linear model is writen as __$Y= X\beta + \epsilon$__ where Y denotes the vector of responces, $\beta$ is the vector of coefficients, **X** is the corresponding design matrix  and $\epsilon$ is the vector of random errors. 
+
+The $\beta$ is given by the :
+
+$\hat \beta =(X'X)^{-1}X'Y$ 
+
+and 
+
+$$Var(\hat \beta)=\sigma^2(X'X)^{-1}$$ aka.
+
+
+
+
+Let's create a Data-Set with $\epsilon$ ~ N(0 , 4)
+
+```{r}
+set.seed(1152)
+n <- 1000     #nb of observations
+b <- vector()       #intercept
+x <- matrix(nrow = n,ncol = 100)
+x.b<- matrix(nrow = n,ncol = 100)
+for(i  in 2:100){
+  b[i] = runif(1, min = -10, max = 10)
+  x[,i] = rnorm(n = n,mean = runif(1, min = -10, max = 10) , 
+                sd= runif(1, min = 0, max = 4))
+}
+
+
+x[,1]= rep(1)
+b[1] = 7.3
+
+epsilon <- rnorm(n, mean=0, sd=sqrt(4))
+
+y <- b*x + epsilon
+
+df= data.frame(y=y,x=x[,-1])
+fit <- lm(y ~ x.2 +x.3 +x.4 , df)
+```
+
+Let's use the explicit formulas.
+
+
+$$\hat Var (\hat \beta)=\hat \sigma^2(X'X)^{-1}$$
+```{r}
+
+X <- cbind(1, x1,x2)
+n<-dim(X)[2]
+betaHat <- solve(t(X) %*% X) %*% t(X) %*% y
+var_betaHat <- anova(fit)[[n]][n] * solve(t(X) %*% X)
+```
+
+
+Let's compare the coefficients: 
+```{r}
+library(knitr)
+a=cbind(fit$coef,c(betaHat[1], betaHat[2],betaHat[3]))
+colnames(a)<- c("Model-Estimated","Manually-Estimated")
+kable(a,caption="Comparison of the Betas")
+```
+
+Let's compare the Standard Errors:
+
+```{r}
+ a=cbind(summary(fit)$coefficients[, 2],sqrt(diag(var_betaHat)))
+colnames(a)<- c("Model-Estimated","Manually-Estimated")
+kable(a,caption="Comparison of the Betas")
+```
+

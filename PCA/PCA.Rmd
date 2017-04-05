@@ -1,0 +1,302 @@
+---
+title: "PCA Analysis"
+author: "Mpelias Michael"
+date : "25 March 2015"
+output:
+  pdf_document:
+    highlight: pygments
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
+  html_document:
+    css: APAStyle.css
+    fig_caption: yes
+    highlight: espresso
+    theme: null
+  word_document:
+    reference: APA.docx
+fontsize: 12pt
+csl: Harvard2.csl
+---
+
+
+
+# Introduction
+
+
+
+The GreekStudyACS Example file concerns a cross-sectional study for the correlation of various risk factors with ACS (Acute coronary syndrome)  and contains among others the following variables on hematology, biochemical, socio-demographic and nutritional characteristics of patients admitted to hospital with Acute Coronary Syndrome. Variables are :
+
+
+* cpk mb: Levels of MB isoenzyme of CPK (ng / ml)
+* troponi: Levels of troponin I  (ng / ml)
+* WBC: White blood cell count  (number of cells / dL)
+* ouria: Levels of urea  (mg / dL)
+* creatinine: Creatinine Levels  (mg / dL)
+* uric acid: Uric acid (mg / dL)
+* age: Age in years
+* dating only: Sex (Male: 1 & Women: 0)
+* weight: Weight kgr
+* height: Height in cm
+* legumes: legume consumption (times / week, 0-5)
+* vegetabl: Vegetable Consumption (times / week, 0-5)
+* salads: salad consumption (times / week, 0-5)
+* meat: meat consumption (times / week, 0-5)
+* chicken: chicken consumption (times / week, 0-5)
+* fish: fish consumption: (times. / week, 0-5)
+
+
+```{r , comment= ""}
+library(foreign)
+
+PCA<- read.dta("C:/Users/Mike/Desktop/My Complete Book In R/Datasets/Multivariate Analysis/GreeckStudyACS_Example.dta")
+
+```
+
+
+
+
+
+# Principal Compontents Analysis
+## 1st Step
+
+
+A prerequisite for the application of principal components analysis is that the variables to be analyzed should be continuous or bivalent. However, if the variables of our analysis (which are categorical and ordinal variables with five levels and more) can be considered to adequately converge to the normal distribution and used as such. 
+But in all other cases we can transform the Categorical into bivalent using a cut-off of Medical importance and meaning.
+
+```{r , fig.height= 9,fig.width= 9}
+library(corrplot)
+
+corrplot(corr = cor(PCA[,47:61],use = "na.or.complete"), 
+         type = "lower",method = "number",
+         title = "Corrplot of variables d1 to d15",diag = F ,mar =  c(0,0,2,0))
+```
+
+
+In the correlation plot we observe that there are enough correlations with |r| > 0.3 between variables in order to proceed to implement the method of analysis in main components.
+
+
+
+## 2nd
+
+The principal component analysis is a technique that requires a large sample size. 
+It is suggested that observations ratio variables should be 10: 1 and that reliable results are obtained when we have a sample size of at least 300 observations. It has been suggested as a guide the following rule, according to which PCA with sample size of 50 observations class does not give good results, 300-500 comments good or very good while samples with 1000 observations give excellent results. If we have missing DATA in our sample, the default analysis R is making is the pairwise deletion of the remarks that have at least one of the participating variables a missing value. To implement this option data should be checked for missing values, which should be either CMAR (completed missing at random) or MAR (missing at random).
+
+
+In R the function for the PCA is `prcomp`
+
+```{r ,  comment= ""}
+library(knitr)
+pca_anal<-prcomp(~.,data=PCA[,c(47:61)],na.action = na.omit,scale. = T,scores = T) 
+
+```
+
+The attributes inhereted in this analysis are the following:
+
+```{r comment= ""}
+
+a=summary(pca_anal)
+
+eig <- (pca_anal$sdev)^2
+
+#Difference to the next EigenValue
+difference <- vector() 
+for(i in 1:length(eig)){difference[i] <- eig[i] - eig[i+1]}
+
+
+
+# Variances in percentage
+Proportion <- eig/sum(eig)
+
+# Cumulative variances
+cumvar <- cumsum(Proportion)
+
+PCA.eigen <- data.frame(Eigenvalue = (pca_anal$sdev)^2, Difference = difference, Proportion = Proportion,
+                     Cumulative = cumvar)
+
+
+kable( PCA.eigen  ,caption = "Principal Component/Correlation")
+
+```
+
+In the first table are the main components derived from the PCA, the eigenvalue for each main component, the difference between the ith and the next main component, the percentage of the initial fluctuation interpreting each main component and the corresponding cumulative percentage of the initial variation is interpreted.
+
+
+```{r comment= ""}
+library(pander)
+
+un = vector()
+for(i in 1:length(PCA.eigen[,1])){
+  
+un[i] = round(1- sum((a$rotation[i,1:15]^2)* PCA.eigen$Eigenvalue),4)
+
+}
+
+pander(cbind(round(a$rotation[1:length(a$sdev), 1:length(a$sdev)] , 4) , Unexplained=un), 
+        caption = "Principal Components (Eigenvectors)", split.table = 75 )
+
+```
+
+The second table refers to the main elements that resulted from the analysis and the elements of eigenvector that constituent them.
+
+With principal component analysis `r length(a$sdev)` new elements will created  as many as the original variables introduced in the analysis, being a mathematical transformation of the original variables.
+
+### Kaiser criterion
+
+The Kaiser criterion proposes to maintain for further analysis of heart rate the variables with eigenvalue greater than 1.
+
+
+The variables that satisfy the Kaiser criterion are the first 3 main components
+
+
+```{r}
+
+count=length(PCA.eigen[which(PCA.eigen$Eigenvalue >=1),]$Eigenvalue)
+
+kable(PCA.eigen[which(PCA.eigen$Eigenvalue >=1),],
+      caption = "Principal Components (Kaiser criterion)")
+
+
+un = vector()
+for(i in 1:length(PCA.eigen[,1])){
+  
+un[i] = round(sum((a$rotation[i,4:15]^2)* PCA.eigen$Eigenvalue[4:15]) ,4)
+
+}
+
+pander(cbind(round(a$rotation[1:length(a$sdev), 1:count] , 4) , Unexplained=un), 
+        caption = "Principal Components (Eigenvectors)", split.table = 75 )
+
+```
+
+In the third column of Table 4 the percentage of the initial variability expressed by each main component is reported. The percentage of variance is calculated with the formula $\frac{\lambda_i}{\sum{\lambda_i}}$ where $\lambda_i$ the eigenvalue of each variable and $\sum{\lambda_i}$ the sum of the eigenvalues which because it was used in the correlation table equals the number of main components and  the number initial variables respectively.
+
+For the first component, the rate of the total variance that interprets equals `r round(PCA.eigen[which(PCA.eigen$Eigenvalue >=1),]$Proportion[1],3)` of the total variance, which is confirmed by the figure.
+Similarly the proportion of variance that interprets the second heart rate is `r round(PCA.eigen[which(PCA.eigen$Eigenvalue >=1),]$Proportion[2],3)`  of the total variance and the third CS the figure is `r round(PCA.eigen[which(PCA.eigen$Eigenvalue >=1),]$Proportion[3] ,3)`. 
+
+
+
+
+The eigenvectors corresponding to the Main Components eigenvalues are described in Table 2. 
+The data of the eigenvectors are the coefficients of the variables, the linear combination of which constitutes each main component and they express the correlation of each variable with the corresponding principal component.
+Because the values of the eigenvectors have great uniformity with their Main Componetn values , it is very difficult to characterize each Main Component of the variables in which the elements have the greatest value. 
+To improve the interpretation, the results should be rotated. The availiable rotations may be rectangular (Main Components rotated are uncorrelated to each other) or non-rectangular (Main Components rotated are correlated to each other).
+
+The value of each main component is the sum of the product of elements of the eigenvectors of each variable with the corresponding value of each variable. Using the values of the initial eigenvectors (Table 2) the value of the first principal component is  
+
+
+$Y_1$ = $`r paste(round(a$rotation[,1],3) ,  paste("X" ,c(1:length(a$rotation[,1])) ,sep="_"), sep="*" ,collapse = " + ")`$
+
+
+The main components generated as a linear combination of the original variables of the analysis do not have units.
+
+### Screeplot
+
+```{r}
+
+ggscreeplot <- function(pca_odject, type = c('norm','pev', 'cev')) 
+{
+  require(ggplot2)
+  type <- match.arg(type)
+  d <- pca_odject$sdev^2
+  yvar <- switch(type, 
+                 norm= d,
+                 pev = d / sum(d), 
+                 cev = cumsum(d) / sum(d))
+
+  yvar.lab <- switch(type,
+                     norm= "Eigenvalue",
+                     pev = 'proportion of explained variance',
+                     cev = 'cumulative proportion of explained variance')
+
+  df <- data.frame(PC = 1:length(d), yvar = yvar)
+
+  ggplot(data = df, aes(x = PC, y = yvar)) + 
+    xlab('principal component number') + ylab(yvar.lab) +
+    geom_point() + geom_path(colour="red") + geom_bar(stat= "identity",fill="black",colour="orange",alpha=0.75) 
+}
+
+ggscreeplot(pca_anal,"norm") + ggtitle("Screeplot For the 1st PCA")
+```
+
+
+### Rotation
+
+```{r}
+
+```
+
+
+## 3rd 
+
+With the principal component analysis the use of Variance - Covariance matrix is sensitive to the change of scale of measurement units of the variables and the variations of magnitude as the variable that has the largest variance value tends to be identified as the first principal component. 
+The application of PCA using the Variance - Covariance matrix only makes sense if we want to maintain in our analysis the differences in the variability of the initial variables. 
+We should apply PCA using similar methodology but instead of Variance - Covariance matrix we will use the correlation table by adding the  `scale. = F` option in the `prcomp` command.
+
+
+```{r,echo=FALSE}
+pca_anal2<-prcomp(~.,data=PCA[,c(47:61)],na.action = na.omit,scale. = T) 
+
+a=summary(pca_anal2)
+
+eig <- (pca_anal2$sdev)^2
+
+#Difference to the next EigenValue
+difference <- vector() 
+for(i in 1:length(eig)){difference[i] <- eig[i] - eig[i+1]}
+
+
+
+# Variances in percentage
+Proportion <- eig/sum(eig)
+
+# Cumulative variances
+cumvar <- cumsum(Proportion)
+
+PCA.eigen1 <- data.frame(Eigenvalue = (pca_anal2$sdev)^2, Difference = difference, Proportion = Proportion,
+                     Cumulative = cumvar)
+
+
+kable(PCA.eigen1,caption = "Principal Component/Covariance",align = "l")
+```
+
+And the  Eigen Vector Matrix is:
+
+```{r,echo=FALSE}
+
+Kaiser.Cut=sum(PCA.eigen1$Eigenvalue)/ length(PCA.eigen1$Eigenvalue)
+
+un = vector()
+for(i in 1:length(PCA.eigen1[,1])){
+
+un[i] = round(1- sum((a$rotation[i,1:15]^2* PCA.eigen1$Eigenvalue)),4)
+
+}
+
+pander(round(a$rotation[1:length(a$sdev), 1:length(a$sdev)] , 4) , 
+        caption = "Principal Components(Eigenvectors)", split.table = 75 )  
+
+```
+
+In PCA using the Variance - Covariance matrix 15 main Components will be created , as many as the primary variables for analysis. Implementing the Kaiser criterion we shall keep the main components that have eigenvalue greater than the average value of the eigenvalues of the analysis, that is $\frac{\sum{E_i}}{n}$= `r sum(PCA.eigen1$Eigenvalue)/ length(PCA.eigen1$Eigenvalue)` - where $E_i$ : each Eigen Value and n the amount (in our case `r length(PCA.eigen1$Eigenvalue)` - so the first `r length(PCA.eigen1[which(PCA.eigen1$Eigenvalue >=Kaiser.Cut),]$Eigenvalue)`  principal components will be maintained.
+
+
+```{r}
+
+kable(PCA.eigen1[which(PCA.eigen1$Eigenvalue >=Kaiser.Cut),],
+      caption = "Principal Components (Kaiser criterion)")
+```
+
+
+### Screeplot 
+
+```{r}
+
+ggscreeplot(pca_anal2,"norm") + ggtitle("Screeplot For the 2nd PCA")
+
+```
+
+
+
+
+

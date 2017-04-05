@@ -1,0 +1,242 @@
+---
+title: "Hierarchical and K-Means"
+author: "Belias Michael"
+date: "30 March 2016"
+output:
+  pdf_document:
+    highlight: pygments
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
+  html_document:
+    css: APAStyle.css
+    fig_caption: yes
+    highlight: espresso
+    theme: null
+  word_document:
+    reference: APA.docx
+fontsize: 12pt
+csl: Harvard2.csl
+---
+
+
+\newpage
+
+# Introduction
+
+Cluster Analysis is the task of grouping a set of objects in such a way that objects in the same group (called a cluster) are more similar (in some sense or another) to each other than to those in other groups (clusters). 
+This definition is not so precise that is why *clustering* can be approached by a variety of methods :
+
+*  Centroid Models :
+    - K-means
+    - K-Medians
+* Connectivity models :
+    - Hierarchical Models
+* Distribution models:
+    - Expectation Maximization
+* Density models:
+* Subspace models:
+* Group models:
+* Graph-based models:
+
+
+
+# The Data 
+
+Our data came from the UCI Machine Learning repository, the name of the Data-Set is seed and it contains values of 3 kinds of Wheat Seeds Kama, Rosa and Canadian. 
+
+
+```{r,echo=FALSE}
+library(pander)
+
+df<- read.table("F:/My Complete Book In R/K-means/k-means.txt")
+
+pander(head(df,10), caption = "10 first observations in our Data-Set" , 
+       split.table = 60)
+```
+
+
+A more detailed explanation of the variables is reported as follow:
+
+1. area , 
+2. perimeter , 
+3. compactness ($C = 4 \pi A/P^2$), 
+4. length of kernel, 
+5. width of kernel, 
+6. asymmetry coefficient 
+7. length of kernel groove. 
+8. wheat species
+
+
+The first question we want to answer is how many clusters shall we keep?
+A nice approach is to check the within group sum of squares for each k (number of Centroids), plot them and with the *elbow method* spot the point where the sum of squares is not decreasing quickly. 
+We can easily build a function for that.
+
+```{r,echo=FALSE}
+df1 <- scale(df[-8]) 
+wssplot <- function(data, nc=15, seed=697){
+               wss <- (nrow(data)-1)*sum(apply(data,2,var))
+               for (i in 2:nc){
+                    set.seed(seed)
+                    wss[i] <- sum(kmeans(data, centers=i)$withinss)}
+                plot(1:nc, wss, type="b", xlab="Number of Clusters",
+                     ylab="Within groups sum of squares")}
+
+
+wssplot(df1,7)
+
+```
+
+With the elbow method we can easily suggest the use of 3 centroids. 
+
+
+There is also the **NbClust** function in the **NbClust** library. 
+
+```{r,comment="",echo=FALSE, message=FALSE}
+library(NbClust)
+set.seed(6970222)
+
+nc <- NbClust(df1, min.nc=2, max.nc=7, method="kmeans")
+pander(table(nc$Best.n[1,]), caption = "")
+
+```
+
+
+```{r ,echo=FALSE, message=FALSE}
+
+library(ggplot2)
+
+ggplot(data=as.data.frame(table(nc$Best.n[1,])),aes(x=Var1, y=Freq))+ 
+    geom_bar(stat= "identity",fill="black",colour="orange",alpha=0.75)+
+    xlab("Number of Clusters") + ylab("Number of Criteria") +
+  ggtitle("Number of Clusters Chosen \n by 26 Criteria")
+
+
+```
+
+So if we take into consideration the 26 Criteria and pick the one with the most hits we conclude aka. 3 means (of course in our case we knew that the species were 3).
+
+Last step is to scale (Standardise the Data) the Data-Set in order to get better prediction.
+
+The function for the k-means in R is *kmeans*.
+
+```{r,comment="",echo=FALSE, message=FALSE}
+set.seed(6970222)
+df1 <- scale(df[-8]) 
+kmeans.result <- kmeans(x = df[,-8],centers = 3)
+table(df$species, kmeans.result$cluster)
+```
+
+
+```{r,comment="",echo=FALSE, message=FALSE}
+library(scatterplot3d)
+
+scatterplot3d(x = df$kernel.length,
+  df$kernel.width,
+  df$area,
+  main = " The Original Separation \n Vs The K-means",
+  xlab = "Area",
+  ylab = "Kernel Length",
+  zlab = "Perimeter",
+  color= as.integer(df$species),
+  pch = kmeans.result$cluster,angle = 60
+  
+)
+
+
+library(flexclust)
+
+randIndex(table(df$species, kmeans.result$cluster))
+```
+
+
+
+#The k-Medoids Clustering
+
+
+A similar procedure is k-Medoids Cluster Analysis, in contrast with the k-means algorithm k-medoids chooses datapoints as centers and works with an arbitrary metrics of distances between datapoints instead of $l_2$/
+
+* Difference from k-means: a cluster is represented with its center in the k-means algorithm, but with the object closest to the center of the cluster in the k-medoids clustering.
+* Is more robust to noise than k-means and in presence of outliers. 
+* PAM (Partitioning Around Medoids) is a classic algorithm for k-medoids clustering.
+* The CLARA algorithm is an enhanced technique of PAM by drawing multiple samples of data, applying PAM on each sample and then returning the best clustering. It performs better than PAM on larger data.
+* Functions *pam()* and *clara()* in package cluster
+* Function *pamk()* in package fpc does not require a user to choose k.
+
+
+Let's run the k-Medoids Clustering Analysis using the *pamk()* 
+
+
+```{r}
+set.seed(6970222) 
+library(fpc)
+
+pamk.result <- pamk(df1)
+pander(table(pamk.result$pamobject$clustering, df$species) )
+```
+
+While running the *pamk* it chose 2 clusters.
+
+* a mixture of Canadian and Kama
+* a mostly Rosa with some Kama
+
+The following plots are a clusplot and a silhouette plot.
+
+```{r}
+
+
+layout(matrix(c(1, 2), 1, 2)) # 2 graphs per page
+
+plot(pamk.result$pamobject)
+
+
+```
+
+The clusplot shows the two cluster and the lines ( not in this example) show the distance between clusters.
+The silhouette plot shows how well are the observations clustered. a value of 1 means exellent and zero not at all. In our case the clustering is medium (.
+
+```{r, echo=FALSE}
+library(ggplot2)
+
+iris2= iris3
+
+ggplot(iris2,aes(Sepal.Length, Sepal.Width)) + geom_point(color=kmeans.result$cluster)
+
+plot(iris2[c("Sepal.Length", "Sepal.Width")], col = kmeans.result$cluster)
+
+points(kmeans.result$centers[, c("Sepal.Length", "Sepal.Width")],
+
+col = 1:3, pch = 8, cex = 2) # plot cluster centers
+```
+
+
+The *pamk* is not the right way to do a Data Analysis, since it is automated. It is good for a first look at the data.
+
+```{r}
+library(cluster)
+
+# group into 3 clusters
+
+pam.result <- pam(df[,-8], 3)
+
+pander(table(pam.result$clustering, df$species))
+
+```
+
+The three clusters are:
+
+* Cluster 1 is mainly composed of Kama with some cases from Rosa
+* Cluster 2 is mainly composed of Canadian with some cases from Kama
+* While the third is mostly Rosa well separated from the others
+
+```{r}
+layout(matrix(c(1, 2), 1, 2)) # 2 graphs per page
+
+plot(pam.result)
+```
+
+In this example, the result of pam() is better, because it identifies three clusters, but that was our input (we knew that the species were 3) **Not usually our case**
+
+
+
+
