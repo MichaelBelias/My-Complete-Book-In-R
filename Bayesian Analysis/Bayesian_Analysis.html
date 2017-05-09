@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="author" content="Michael Belias" />
+
+<meta name="date" content="2017-04-20" />
+
+<title>Bayesian Analysis</title>
+
+\usepackage{titling}
+\usepackage{color}
+
+\pretitle{
+  \begin{center}
+  \color{blue}
+  \huge{\bf A Guide to Bayesian Modeling}
+  
+\vspace{6.0cm}
+\setlength{\arrayrulewidth}{0.5mm}
+\setlength{\tabcolsep}{18pt}
+\renewcommand{\arraystretch}{1.5}
+
+ 
+\includegraphics[]{logo.jpg}\\[\bigskipamount]
+\vspace{6.0cm}
+\begin{flushright}
+\begin{tabular}{ c }
+
+\small  Author: Belias Michael\\ 
+\small  Student in MSc in Biostatistics\\
+\small Athens, 20 April 2016\\
+
+\end{tabular}
+\end{flushright}
+\newpage
+ }
+\posttitle{\end{center}}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\rhead{\includegraphics[width = .07 \textwidth]{small_logo.jpg}}
+
+
+
+
+
+<link href="data:text/css;charset=utf-8,%40import%20%22http%3A%2F%2Ffonts%2Egoogleapis%2Ecom%2Fcss%3Ffamily%3DAnonymous%2BPro%3A400%2C400italic%2C700%2C700italic%26subset%3Dlatin%2Clatin%2Dext%22%3B%0A%40import%20url%28data%3Atext%2Fcss%3B%20charset%3Dutf%2D8%2C%2540font%252Dface%2520%257B%250A%2520%2520font%252Dfamily%253A%2520%2527Inconsolata%2527%253B%250A%2520%2520font%252Dstyle%253A%2520normal%253B%250A%2520%2520font%252Dweight%253A%2520400%253B%250A%2520%2520src%253A%2520local%2528%2527Inconsolata%2520Regular%2527%2529%252C%2520local%2528%2527Inconsolata%252DRegular%2527%2529%252C%2520url%2528http%253A%252F%252Ffonts%252Egstatic%252Ecom%252Fs%252Finconsolata%252Fv15%252FBjAYBlHtW3CJxDcjzrnZCJ0EAVxt0G0biEntp43Qt6E%252Ettf%2529%2520format%2528%2527truetype%2527%2529%253B%250A%257D%250A%2540font%252Dface%2520%257B%250A%2520%2520font%252Dfamily%253A%2520%2527Inconsolata%2527%253B%250A%2520%2520font%252Dstyle%253A%2520normal%253B%250A%2520%2520font%252Dweight%253A%2520700%253B%250A%2520%2520src%253A%2520local%2528%2527Inconsolata%2520Bold%2527%2529%252C%2520local%2528%2527Inconsolata%252DBold%2527%2529%252C%2520url%2528http%253A%252F%252Ffonts%252Egstatic%252Ecom%252Fs%252Finconsolata%252Fv15%252FAIed271kqQlcIRSOnQH0yZ%255FTkvowlIOtbR7ePgFOpF4%252Ettf%2529%2520format%2528%2527truetype%2527%2529%253B%250A%257D%250A%29%3B%0A%40import%20url%28data%3Atext%2Fcss%3B%20charset%3Dutf%2D8%2C%2540font%252Dface%2520%257B%250A%2520%2520font%252Dfamily%253A%2520%2527Source%2520Code%2520Pro%2527%253B%250A%2520%2520font%252Dstyle%253A%2520normal%253B%250A%2520%2520font%252Dweight%253A%2520400%253B%250A%2520%2520src%253A%2520local%2528%2527Source%2520Code%2520Pro%2527%2529%252C%2520local%2528%2527SourceCodePro%252DRegular%2527%2529%252C%2520url%2528http%253A%252F%252Ffonts%252Egstatic%252Ecom%252Fs%252Fsourcecodepro%252Fv6%252Fmrl8jkM18OlOQN8JLgasD9zbP97U9sKh0jjxbPbfOKg%252Ettf%2529%2520format%2528%2527truetype%2527%2529%253B%250A%257D%250A%2540font%252Dface%2520%257B%250A%2520%2520font%252Dfamily%253A%2520%2527Source%2520Code%2520Pro%2527%253B%250A%2520%2520font%252Dstyle%253A%2520normal%253B%250A%2520%2520font%252Dweight%253A%2520700%253B%250A%2520%2520src%253A%2520local%2528%2527Source%2520Code%2520Pro%2520Bold%2527%2529%252C%2520local%2528%2527SourceCodePro%252DBold%2527%2529%252C%2520url%2528http%253A%252F%252Ffonts%252Egstatic%252Ecom%252Fs%252Fsourcecodepro%252Fv6%252Fleqv3v%252DyTsJNC7nFznSMqbsbIrGiHa6JIepkyt5c0A0%252Ettf%2529%2520format%2528%2527truetype%2527%2529%253B%250A%257D%250A%29%3B%0Abody%20%7B%0Amargin%3A0%20auto%3B%0Afont%2Dfamily%3A%20%22Times%20New%20Roman%22%2C%20Times%2C%20serif%3B%0Afont%2Dsize%3A1em%3B%0Atext%2Dalign%3Aleft%3B%0Amax%2Dwidth%3A6%2E5in%0A%7D%0Atable%20%7B%0Aborder%2Dcollapse%3A%20collapse%3B%0Aborder%2Dbottom%3A1px%20solid%20%23000%3B%0Amargin%3Aauto%3B%0A%7D%0Ath%2C%20td%7Bpadding%3A5px%3B%7D%0Ap%20%7B%0Atext%2Dalign%3Aleft%3B%0Amargin%2Dbottom%3A2ex%3B%0Atext%2Dindent%3A%202em%3B%0Aline%2Dheight%3A%201%2E25em%3B%0A%7D%0A%2Ereferences%20p%20%7Bpadding%2Dleft%3A%202%2E5em%20%3B%0Atext%2Dindent%3A%20%2D2%2E5em%3B%7D%0A%2Elevel1%20h1%20%7Bfont%2Dsize%3A1em%3B%7D%0A%2Elevel2%20h2%20%7Bfont%2Dsize%3A1em%3B%7D%0A%2Elevel3%20h3%20%7Bfont%2Dsize%3A1em%3B%7D%0A%2Elevel4%0Ah4%20%7Bfont%2Dsize%3A1em%3B%7D%0Ah1%20%7B%0Atext%2Dalign%3Acenter%3B%0A%7D%0Ah2%2C%20h3%2C%20h4%2C%20h5%20%7B%0Atext%2Dalign%3A%20left%3B%0A%7D%0Ah3%2C%20h4%2C%20h5%20%7B%0Amargin%2Dleft%3A%202em%3B%0A%7D%0A%2Eauthor%20%2C%20%2Edate%2C%20%2Eauthor%5Fafil%20h4%20%7Btext%2Dalign%3Aleft%3B%0Amargin%2Dleft%3A0%3B%0Afont%2Dweight%3Anormal%3B%0Afont%2Dstyle%3Anormal%3B%0Apadding%3A0px%3B%0Amargin%3A0px%3B%0A%7D%0A%23header%20h4%20em%20%7B%0Afont%2Dweight%3Anormal%3B%0Afont%2Dstyle%3Anormal%3B%0A%7D%0Ablockquote%20p%20%7Btext%2Dindent%3A0em%3B%0Amargin%2Dleft%3A2%2E5em%3B%7D%0Ablockquote%20p%20%2B%20p%20%7B%0Atext%2Dindent%3A%202%2E5em%3B%0A%7D%0Apre%2C%20img%20%7B%0Amax%2Dwidth%3A%20100%25%3B%0A%7D%0Apre%20%7B%0Aoverflow%2Dx%3A%20auto%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%22Anonymous%20Pro%22%2Cmonospace%3B%0Atext%2Dalign%3Aleft%3B%0Apadding%3A5px%3B%0Afont%2Dsize%3A%2092%25%3B%0Aborder%3A%201px%20solid%20%23ccc%3B%0A%7D%0Apre%20code%20%7B%0Afont%2Dsize%3A%200%2E9em%3B%0Afont%2Dfamily%3A%20%27Source%20Code%20Pro%27%20%21important%3B%0Atext%2Dalign%3A%20left%3B%0Adisplay%3A%20block%3B%20padding%3A%200%2E5em%3B%0A%7D%0Acode%2Er%20%7B%0Afont%2Dfamily%3A%20%27Inconsolata%27%20%21important%3B%0Afont%2Dsize%3A%201%2E2em%3B%0Abackground%2Dcolor%3A%20rgba%28160%2C%20160%2C%20160%2C%200%2E2%29%3B%0A%7D%0Asup%2Csub%20%7B%0Aposition%3A%20relative%3B%0Avertical%2Dalign%3A%200%3B%0A%7D%0Asup%20%7B%0Abottom%3A%20%2E4em%0A%7D%0Asub%20%7B%0Atop%3A%2E4em%0A%7D%0A%2Eheader%20th%20%7B%0Aborder%2Dbottom%3A1px%20solid%20%23000%3B%0Aborder%2Dtop%3A%201px%20solid%20%23000%3B%0Afont%2Dweight%3A%20normal%3B%0A%7D" rel="stylesheet" type="text/css" />
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Bayesian Analysis</h1>
+<h4 class="author"><em>Michael Belias</em></h4>
+<h4 class="date"><em>April 20, 2017</em></h4>
+
+
+
+
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>According to Oxford dictionary statistics is a branch of mathematics dealing with the collection, analysis, interpretation, presentation, and organization of data. Data may be of any applied science field such as medical, finance, social, physics etc and they can be separated into 2 types quantitative and qualitative.<br />
+The typical steps of a statistical analysis are eight. The first step is to define the problem which though it may seem obvious it is the most basic and vital part of the procedure in which we will be</p>
+
+</div>
+<div id="bayesian-theory" class="section level1">
+<h1>Bayesian Theory</h1>
+
+<div id="bayes-theorem" class="section level2">
+<h2>Bayes theorem</h2>
+</div>
+</div>
+<div id="monte-carlo-estimation" class="section level1">
+<h1>Monte Carlo estimation</h1>
+
+<div id="markov-chains" class="section level2">
+<h2>Markov chains</h2>
+
+</div>
+</div>
+<div id="popular-models" class="section level1">
+<h1>Popular Models</h1>
+
+</div>
+<div id="hierarchial-models" class="section level1">
+<h1>Hierarchial Models</h1>
+
+</div>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

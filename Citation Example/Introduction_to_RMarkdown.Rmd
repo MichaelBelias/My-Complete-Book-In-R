@@ -1,0 +1,680 @@
+---
+title: ''
+author: ''
+date: ''
+output:
+  pdf_document:
+    highlight: pygments
+    includes:
+      in_header: headerlogo.tex
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
+  html_document:
+    css: APAStyle.css
+    fig_caption: yes
+    highlight: espresso
+    includes:
+      in_header: headerlogo.tex
+    theme: null
+  word_document:
+    reference: APA.docx
+fontsize: 12pt
+csl: Harvard2.csl
+bibliography: citations.bib
+---
+```{r Installation of Packages,message=FALSE,echo=FALSE, warning=FALSE}
+###Function for checking if pkg is installed 
+is_installed <- function(mypkg) is.element(mypkg, installed.packages()[,1]) 
+
+####Packages needed
+package_names= c("ape","ips","RMySQL","svDialogs","Rphylip",
+                 "rdrop2","xlsx","devtools","httpuv",
+                 "png","grid","phytools","phangorn","knitr","diagram")
+###Package installer and installation
+for(package_name in package_names)  
+{  
+  if(!is_installed(package_name))  
+  {  
+    install.packages(package_name)  
+  }  
+  library(package_name,character.only=TRUE,quietly=TRUE,verbose=FALSE) 
+  #cat("Package :",package_name," Acquired","\n")
+  
+}  
+
+rm(package_name,package_names,is_installed)
+#search()
+
+
+##setting WD
+#SetWD=dlgInput("Give me Working Directory") 
+## C:/Users/Mike/Desktop/testDnA
+## /home/mike/Desktop/Diploma
+## C:/Users/mmpel/Desktop/
+#setwd("C:/Users/Mike/Desktop/testDnA")
+#rm(SetWD)
+
+DNAseqs <- read.csv2("C:/Users/Mike/Desktop/testDnA/MB_db_export.csv", 
+                     sep = ",", skip = 1, stringsAsFactors=F)
+names(DNAseqs)=c("uid","initialCode","comment",
+                 "submissionCountry","gender","infectionRoute","region" ,
+                 "cluster" ,"testYear","infectionCountry","originLocation",
+                 "subtype","sequence")
+
+
+
+##DataSet
+## Keeping only UID submissionCountry region cluster testYear  sequence
+DNAseqs=DNAseqs[,c(1,4,7,8,9,13)]
+
+## the Clear DS with all non NULL Years
+clear=DNAseqs[-which(DNAseqs$testYear=="NULL"),]
+#dim(clear)
+
+
+###With Test Years 
+##No Clusters
+Yes_Years_No_Clusters=DNAseqs[which(DNAseqs$testYear!='NULL' & DNAseqs$cluster=='NULL'),]
+
+##With Clusters
+Yes_Years_Yes_Clusters=DNAseqs[which(DNAseqs$testYear!='NULL' & DNAseqs$cluster!='NULL'),]
+
+
+write.csv( Yes_Years_No_Clusters,"C:/Users/Mike/Desktop/testDnA/exports/full.csv" )
+
+###No Years (to be deleted)
+###No Clusters 
+No_Years_No_Clusters_DNAseqs=DNAseqs[which(DNAseqs$cluster=='NULL' & DNAseqs$testYear=='NULL'),]
+###With Clusters 
+No_Years_Yes_Clusters_DNAseqs=DNAseqs[which(DNAseqs$cluster!='NULL' & DNAseqs$testYear=='NULL'),]
+
+
+##Counting Non Null Cluster & Time registers
+NonNullClusterMatrix=matrix(0, nrow=26, ncol=4, dimnames=list(seq(0:25),c("Cluster ID","With Sampling Years Frequency", "Total","Percentage")))
+names=names=seq(1,26)
+for (i in 1:26)
+{
+  names[i]=paste("Cluster", i-1)
+  NonNullClusterMatrix[i,1]= 0
+  NonNullClusterMatrix[i,2]=length(which(Yes_Years_Yes_Clusters$cluster==i-1))
+  NonNullClusterMatrix[i,3]=length(which(DNAseqs$cluster==i-1))
+  NonNullClusterMatrix[i,4]=round(NonNullClusterMatrix[i,2]*100/NonNullClusterMatrix[i,3],2)
+  
+}
+
+
+NonNullClusterMatrix=rbind(NonNullClusterMatrix, c("Overall",2871, 3511 ,81.77))
+names[27]="Overall"
+NonNullClusterMatrix[,1]=names
+rm(i,names)
+
+```
+
+
+\newpage
+
+# Introduction
+
+## Epidemiology
+ 
+Epidemiology is the study of the distribution and determinants of health-related states or events (including disease), and the application of this study to the control of diseases and other health problems. Various methods can be used to carry out epidemiological investigations: surveillance and descriptive studies can be used to study distribution; analytical studies are used to study determinants[@WHO].
+
+## Molecular epidemiology
+
+A definition of molecular epidemiology (Schulte, 1993) defines it as "the use of biological markers or biological measurements in epidemiological research." This definition limits molecular epidemiology only to biomarker study. A straightforward classification of a biomarker classifies its use into four types, those that: (1) improve assessment of exposure, (2) identify the underlying mechanisms of disease and disease transmission, (3) identify subgroups of the population that are more susceptible to the effects of pathogens or pathogenic substances, and (4) identify subgroups of cases with more homogenous disease to better clarify the role of various aetiologic agents (Rabkin & Rothman, 2001). Overall, molecular epidemiology studies measure biologic response (such as mutations) to specific exposures (mutagens) and assess the interplay of host characteristics such as genotype and phenotype in gene expression, and development of disease and response to therapy. Molecular epidemiology is also useful in diagnosis, prognosis, and follow-up of therapeutic results. Molecular epidemiology is a technique-based discipline. [@Chattopadhyay]
+
+
+
+## HIV
+The human immunodeficiency virus (HIV) is a lentivirus (a subgroup of retroviruses) that causes HIV infection and acquired immunodeficiency syndrome (AIDS) [@Weiss]. Human immunodeficiency viruses are separated in two major groups (HIV-1 and HIV-2) and are the result of multiple cross-species transmissions of simian immunodeficiency viruses (SIVs) naturally infecting African primates. Most of these transfers resulted in viruses that spread in humans to only a limited extent. However, one transmission event, involving SIV-cpz from chimpanzees in south-eastern Cameroon, gave rise to HIV-1 group M-the principal cause of the AIDS pandemic [@Greene_2007].
+
+
+![Figure.1](./png/Figure1.png)
+
+*Fig 0.1   Phylogenetic relationship of primate lentivirus. The pol gene of primate lentivirus was used to generate the unrooted tree. Two of the viruses presented in the tree (HIV-1 group N and SIVagm SAB have mosaic genomes. The small arrows in the tree indicate where the sequences would branch in an env gene tree ([@HIV_Sumposium_1999]  (accessed on November 2004).*
+
+## Group M
+Group M, which is responsible for the majority of infections in the worldwide HIV-1 epidemic, can be further subdivided into 10 recognized phylogenetic subtypes, or clades (A to K), which are approximately equidistant from one another. 
+Within group M, the average inter-subtype genetic variability is 15% for the gag gene and 20-30% for the env gene while the pol gene shows only a 10% genetic divergence [@Camacho]. 
+Clades B and D are more closely related to each other than to other subtypes, and clade D is considered the early clade B African variant, but their original designation as subtypes is retained by authors for consistency with earlier published works ( [@Gao], [@Louwagie]).
+Classification of HIV-1 subtypes was originally based on the sub genomic regions of individual genes. However, with an increasing number of viral isolates available worldwide and improvements in sequencing methods, HIV-1 phylogenetic classifications are currently based either on nucleotide sequences derived from multiple sub genomic regions (gag, pol, and env) of the same isolates or on full-length genome sequence analysis. This approach has revealed virus isolates in which phylogenetic relations with different subtypes switch along their genomes[@Peeters]. 
+According to recent studies, on a global scale the most prevalent HIV-1 genetic forms are subtypes A, B, and C, with subtype C accounting for more than 50% of all HIV-1 infections worldwide.
+
+![Figure.1](./png/Figure2.png)
+
+*Fig 0.2 The frequency of each HIV-1 subtype and recombinant form was estimated in each country based on published findings. A complete breakdown of subtype prevalence per country and the countries present in each region are listed in the Supplementary information S1 (table). The countries are colour-coded based on the dominant HIV-1 group main (M) subtype. The countries coloured grey have a low level of HIV-1 prevalence or were not represented in the scientific literature related to HIV-1 subtype prevalence. The pie charts depict the proportion of each subtype or recombinant form in each geographical region. The size of the pies is proportional to the number of HIV-1 infected individuals in that particular region. [@Ari_n_2007].* 
+
+
+## Subtype B
+
+Subtype B is the main genetic form in western and central Europe, the Americas, and Australia and is also common in several countries of South-east Asia, northern Africa, and the Middle East and among South African and Russian homosexual men[@Buonaguro_2007]. 
+
+## AIDS
+
+Acquired Immune Deficiency Syndrome (AIDS) was first recognized as a new disease in 1981 when increasing numbers of young homosexual men succumbed to unusual opportunistic infections and rare malignancies  [@Greene_2007]. A retrovirus, now termed human immunodeficiency virus type 1 (HIV-1), was subsequently identified as the causative agent of what has since become one of the most devastating infectious diseases to have emerged in recent history ( [@Barre_Sinoussi_1983]; [@Gallo_1984]; [@Popovic_1984]). HIV-1 spreads by sexual, percutaneous, and perinatal routes; however, 80% of adults acquire HIV-1 following exposure at mucosal surfaces, and AIDS is thus primarily a sexually transmitted disease ([@Hladik_2008]; [@Cohen_2011]). Since its first identification almost three decades ago, the pandemic form of HIV-1, also called the main (M) group, has infected at least 60 million people and caused more than 25 million deaths[@Merson_2008]. Developing countries have experienced the greatest HIV/AIDS morbidity and mortality, with the highest prevalence rates recorded in young adults in sub-Saharan Africa (http://www.unaids.org/). Although antiretroviral treatment has reduced the toll of AIDS- related deaths, access to therapy is not universal, and the prospects of curative treatments and an effective vaccine are uncertain ([@Barouch_2008]; [@Richman_2009]). Thus, AIDS will continue to pose a significant public health threat for decades to come.
+One of the major characteristics of lentiviruses is their extensive genetic variability, which is the result of the high error rate, the recombinogenic properties of the reverse transcriptase enzyme and the fast turnover of virions in HIV infected individuals. [@Drosopoulos_1998]
+
+## Phylogenetic Analysis
+
+Phylogenetics  is the study of the evolutionary history and relationships among individuals or groups of organisms (e.g. species, or populations).These relationships are discovered through phylogenetic inference methods that evaluate observed heritable traits, such as DNA sequences or morphology under a model of evolution of these traits. The result of these analyses is a phylogeny (also known as a phylogenetic tree) - a hypothesis about the history of evolutionary relationships. The tips of a phylogenetic tree can be living organisms or fossils. Phylogenetic analyses have become central to understanding biodiversity, evolution, ecology, and genomes. [@Phylogeny]
+
+## Viral Phylodynamics 
+
+Viral phylodynamics is defined as the study of how epidemiological, immunological, and evolutionary processes act and potentially interact to shape viral phylogenies. A great research on viral phylodynamics has focused on transmission dynamics in an effort to shed light on how these dynamics impact viral genetic variation [@Grenfell_2004]. 
+Viral Phylodynamics can help us in three problems :
+
+* Viral origins: The rapid rate of evolution in viruses allows molecular clock models to be estimated from genetic sequences, thus providing a per-year rate of evolution of the virus. With the rate of evolution measured in real units of time, it is possible to infer the date of the most recent common ancestor (MRCA) for a set of viral sequences.
+
+* Viral Spread :
+Phylodynamic models may provide insight into epidemiological parameters that are difficult to assess through traditional surveillance means.
+
+* Viral control efforts :
+
+Phylodynamic approaches can also be useful in ascertaining the effectiveness of viral control efforts, particularly for diseases with low reporting rates. For example, the genetic diversity of the DNA-based hepatitis B virus declined in the Netherlands in the late 1990s, following the initiation of a vaccination program [@van_Ballegooijen_2009].
+
+
+In our case we will mostly study the first issue. 
+
+
+## Molecular Clock Assumption
+
+A hypothesis that predicts a constant rate of molecular evolution among species. It is also a method of genetic analysis that can be used to estimate evolutionary rates and timescales using data from DNA or proteins. This is a very strict assumption not applicable to viruses like HIV, so the use of ** Relaxed Molecular Clocks** is necessary. The relaxed molecular clock is a statistical model of molecular evolution that allows the evolutionary rate to vary amongst organisms (in our case HIV)[@Ho_2013]. 
+
+### Relaxed Molecular Clocks
+
+Relaxed molecular clock models take into account rate variation across lineages and have been proposed in order to obtain better estimates of divergence times [@Drummond_2006].  They represent an intermediate position between the 'strict' molecular clock hypothesis and Joseph Felsenstein's many-rates model[@Felsenstein_2001] and are made possible through MCMC techniques that explore a weighted range of tree topologies and simultaneously estimate parameters of the chosen substitution model. It must be remembered that divergence dates inferred using a molecular clock are based on statistical inference and not on direct evidence.
+
+
+
+
+## Molecular Epidemiology in HIV
+
+Molecular epidemiology of (HIV-1) subtype B has been studied extensively since it's discovery, as it quickly became the dominant subtype of the virus in the economically developed world, especially among men who have sex with other men [@Felsenstein_2001]. With international transportation becoming more affordable than in the past, interaction between persons who live with the virus has increased, and that appears to have been a reason for the spread of the epidemic within the European region, as migration pathways of the virus have been observed between the countries of Europe [@Paraskevis_2009]. 
+
+
+\newpage
+
+# Data Collection
+
+## Initial Dataset
+
+This study is based on the 2009 study of Magiorkinis et al [@Magiorkinis_2009]. 
+The original Dataset had 8,370 sequences of HIV-1 Subtype - B which were collected from 79 countries across the world. The collection of the sequences was divided into two strategies :
+* Systematic research through the PubMed Database 
+* The addition of two highly acknowledged and sophisticated European researches CATCH and SPREAD.
+
+
+### The European Data-Set
+
+The European part of the Data-Set included sequences from two European studies : the Combined Analysis of Resistance Transmission over Time of Chronically and Acute Infected HIV Patients (CATCH) and the SPREAD (Strategy to Control SPREAD of HIV Drug Resistance) collaboration. The SPREAD study included 4480 newly diagnosed patients sampled during 9/2002-12/2007 from 20 European countries and Israel. In the prospective setting a standardised sampling 
+The subtype B global dispersal strategy was designed to include representative sampling from all countries ([@Vercauteren_2009]; [@Wensing_2008]). For the purpose of this study we included only those classified as subtype B from both the CATCH and the SPREAD studies. The CATCH study 2208 antiretroviral na?ve individuals from 18 European countries and Israel during 1996-2002 [@Wensing_2005].
+
+### The Non-European Data-Set
+
+The Non-European Data-Set was collected through systematic bibliographic search in PubMed using the following keywords "HIV-1", "molecular epidemiology", "resistance", "subtype B" and "pol" in various combinations, cleaned of different Subtypes only keeping the subtype B . The later sampling criteria were: i) in cases where more than one study was available for one country, we included only those sequences isolated from different areas of that country, ii) in cases where the sampling areas were not described in the studies from the same country, to avoid redundant sequences, we only included sequences from the largest study, iii) similarly for studies performed at the same centres or cities, iv) from longitudinal studies concerning mainly resistance to antiretroviral therapy, we included only the oldest available sequence per patient, and v) we excluded studies concerning mother to child transmission.[@Magiorkinis_2009]
+
+## Monophyletic clusters extraction
+
+In subsequent projects, several monophyletic clusters were extracted from Maximum Likelihood Phylogenetic trees. Those were identified as subtrees with a common ancestral node, whose strains had been submitted in a specific area, accounting for more than 75% of the total strains within the subtree. Each monophyleticncluster had to consist of more than 10 sequences, in order to be eligible for inclusio n.This process was carried out manually, by visual inspection using Dendroscope [@Huson_2012]. This concluded into 25 clusters with 3511 total sequences allocated as shown in Figure 
+```{r, echo=FALSE}
+kable(NonNullClusterMatrix[,c(1,3)], caption = "24 Monophyletic Clustered Data-Set sizes\n as extracted in previews studies" )
+```
+
+
+\newpage
+
+# Methods
+## Operating Systems - Statistical Packages and R-Packages Used.
+
+For the completion of my thesis 2 main Operating systems were used:
+
+* Windows 8.1 - Windows 10
+* Ubuntu Linux 15.04
+
+The Statistical Packages were :
+
+1.R [@R] `r R.Version()$version`
+
+2.R-Studio[@RStudio] `RStudio Desktop 0.99.892`
+
+3.Python 2.7.11
+
+
+The packages used :
+
+* for phylogenetic analysis and Beast Input Manipulation
+
+a. phangorn [@phangorn]
+
+b. ape [@ape]
+
+c. Rphylip [@Rphylip]
+
+d. phytools [@phytools]
+
+e. ips [@ips]
+
+f. XML [@XML]
+
+g. ggtree [@ggtree]
+
+* Other Packages:
+
+a. ggplot2 [@ggplot2]
+
+b. knitr [@knitr]
+
+c. rworldmap [@rworldmap]
+
+d. png [@png]
+
+e. RMySQL [@RMySQL]
+
+g.
+
+For the writing I used the `Rmarkdown` [@rmarkdown] package with **LaTeX**.
+
+\newpage 
+
+## Analysis
+### The Study outline
+
+The diagram below shows the work that was done. 
+
+
+```{r, comment= "" ,, comment= "" ,,echo=FALSE,fig.height=7,fig.width=9,warning=FALSE,message=FALSE}
+
+require(phytools)
+require(diagram)
+openplotmat(main = "Thesis Diagram")
+#elpos <- coordinates (c(1, 1, 2, 4))
+                #1    #2      #3    #4      #5      #6    #7    #8    #9
+pos = matrix(c(0.125, 0.375, 0.750, 0.100, 0.450, 0.750, 0.450, 0.500, 0.875,
+               0.900, 0.900, 0.900, 0.500, 0.500, 0.500, 0.075,-0.125, 0.125)
+             ,nrow = 9, ncol = 2
+             , byrow = F
+             ,dimnames = list(c(1:9)
+             ,c("C.1", "C.2")))
+
+fromto <- matrix(ncol = 2, byrow = TRUE,
+                 data = c(1, 2, 
+                          2, 3, 
+                          2, 5, 
+                          3, 4, 
+                          4, 7,
+                          3, 6,
+                          5, 7,
+                          6, 7 ))
+
+nr <- nrow(fromto)
+arrpos <- matrix(ncol = 2, nrow = nr)
+   for (i in 1:nr){
+     arrpos[i, ] = straightarrow (to = pos[fromto[i, 2], ],
+        from = pos[fromto[i, 1], ],
+        lwd = 2, arr.pos = 0.6, arr.length = 0.5)
+   }
+textrect (pos[1,], 0.08, 0.075,
+          lab = c("Align DNA", "6979 Sequences"), 
+          box.col = "Yellow",
+          shadow.col = "Black", shadow.size = 0.005, cex = 0.95)
+
+textrect (pos[2,], 0.08, 0.075,lab = c("Divide","Datasets"), 
+          box.col = "Orange",
+          shadow.col = "Black",
+          shadow.size = 0.005, 
+          cex = 1)
+textrect(pos[3,], 0.08, 0.075, 
+         lab = c(" Divide per","Cluster"),
+         box.col = "olivedrab2",
+         shadow.col = "Black", shadow.size = 0.005, cex = 1)
+
+textrect(pos[4,], 0.09, 0.15, 
+            lab = c("Random Sampled","Dataset","200 Obs"), box.col = "Green",
+shadow.col = "Black", shadow.size = 0.005, cex = 1)
+
+
+text(arrpos[2, 1]-0.05, arrpos[2, 2]-0.03, "With Clusters"        ,cex = 0.75)
+text(arrpos[2, 1]-0.05, arrpos[2, 2]+0.03, "2872 Sequences"        ,cex = 0.75)
+text(arrpos[3, 1]-0.05, arrpos[3, 2]+0.125, "no Clusters"          ,cex = 0.75)
+text(arrpos[3, 1]-0.05, arrpos[3, 2]+0.075, "3897 Sequences"          ,cex = 0.75)
+text(arrpos[4, 1]+0.25, arrpos[4, 2]+0.15, "Random Pick"          ,cex = 0.75)
+text(arrpos[5, 1]-0.035, arrpos[5, 2]+0.10, "combine 200 +300"    ,cex = 0.75)
+text(arrpos[5, 1]+0.000, arrpos[5, 2]+0.05, "combine 200 +500"    ,cex = 0.75)
+text(arrpos[5, 1]+0.035, arrpos[5, 2]+0.00, "combine 200 +700"    ,cex = 0.75)
+text(arrpos[6, 1]+0.0125, arrpos[6, 2]+0.125, c("Raxml   Bootstrap"),cex = 0.75)
+text(arrpos[6, 1]+0.0125, arrpos[6, 2]+0.075, c("Create  Consensus"),cex = 0.75)
+text(arrpos[6, 1]-0.010, arrpos[6, 2]+0.025, c("Trees            "),cex = 0.75)
+text(arrpos[8, 1]+0.05,  arrpos[8, 2]+0.10 , "300 +200 combine"   ,cex = 0.75)
+text(arrpos[8, 1]+0.015, arrpos[8, 2]+0.05, "500 +200 combine"    ,cex = 0.75)
+text(arrpos[8, 1]-0.015, arrpos[8, 2]-0.00, "700 +200 combine"     ,cex = 0.75)
+
+
+textrect(pos[5,], 0.11, 0.1, 
+            lab = c("Take Samples","300-500-700","obs"),
+            box.col = "olivedrab2",
+            shadow.col = "Black", 
+            shadow.size = 0.005, 
+            cex = 1)
+
+
+
+textrect(pos[6,], radx=0.1,rady=0.11, 
+         lab = c("Fixed Sampled","Dataset","200 obs"), 
+         box.col = "green",
+         shadow.col = "Black", 
+         shadow.size = 0.005, cex = 1)   
+textrect(pos[7,], 0.075, 0.075, lab = c("Six ","Datasets"),
+                   box.col = "Purple",
+               shadow.col = "Black", shadow.size = 0.005, cex = 1)
+
+add.simmap.legend(leg = paste( "Step",1:5,sep=""),fsize=0.65,prompt =FALSE,y=0.3,
+                  colors = c("Yellow","Orange","olivedrab2","green","Purple"),
+                  vertical=T,
+                  x=0,y=0)
+
+```
+
+
+
+The original Data-Set had 8348 but 6979 sequences left after we deleted all sequences without sampling years. The most vital information for my study part was kept:
+
+* The ID 
+* The Submission Country 
+* The region 
+* The monophyletic Cluster it belongs 
+* and the sequence. 
+
+The Monophyletic Clusters as presented in the 2.2 chapter (Monophyletic clusters extraction) had many observations of NULL sampling year, so they were deleted. 
+As shown in the following table cluster 24 was erased completely.
+
+```{r,echo=FALSE}
+kable(NonNullClusterMatrix, caption = "24 Monophyletic Clustered Data-Sets (with and wihout Year Information)")
+```
+
+as we may observe there is a vast difference in the percentage of the sequences with the Year information ranging from  0 % to 100%. 
+
+
+### Alignment of the Sequences.
+
+The sequences were then aligned using mafft version 7 a multiple sequence alignment program for Unix-like operating systems[@Katoh_2002]. I preferred to keep the Speed-oriented method because accuracy-oriented methods were time consuming. A Maximum Likelihood tree for the verification of the Clusters above was extracted with RaXmL [@Stamatakis_2014] version 8.2.4 in www.phylo.org  [@Miller_2010] server. 
+
+### Division of the Dataset (Pseudo-Pgylogenetic Analysis)
+
+The 6979 Sequences were divided into two Data-Sets, regarding the Cluster information.
+
+* 2871 had be classified into Clusters, while
+* 3879 had no Cluster information.
+
+
+
+The Clustered Data-Set was then divided into the 24 monophyletic Data-Sets, the size of each is shown below in Table 3 .
+
+```{r,echo=FALSE}
+kable(NonNullClusterMatrix[,c(1,2)], caption = "24 Monophyletic Clustered Data-Set Size")
+```
+
+Two different approaches for sub-sampling were followed. The first was to sub-sample at random the Clusters making sure that at least were represented from each, and the second was to pick the most genetically diverse of each cluster. 
+
+
+For the first part for very small Clusters (below 10) such as Cluster 0 and 25 were not Sub-sampled but used as they were and all clusters were randomly sub-sampled to the size of 10.
+
+For the second two parameters were taken care of: 
+
+* The size of the monophyletic and
+* The Genetic Diversity the Cluster had.
+
+The small Clusters (below 10 size) were represented as whole, medium clusters were sampled depending the genetic diversity they had, while the Cluster 23 was randomly sub-sampled with 30 sequences. The reason was that many Monophyletics were severely decreased and lost their homogeneity while Cluster 23 had lost only 3.5% of it's sequences.
+
+
+
+In order to find the Genetic Diversity we run a Phylogenetic Analysis in each one and picked the Best Tree exported by RaXmL v8.2.4 [@Stamatakis_2014] with the following options:
+
+a. raxmlHPC-PTHREADS-SSE3 (multicore)
+b. -T 4 (threads) 
+c. -f a   (+ ML search )
+d. -N autoMRE - (a stopping Criterion ) [@Pattengale_2010]
+e. -m GTRGAMMA   (GTRGAMMA model GTR with Gamma Distribution of rates across sites)
+f. -p 123 -x 123 (Bootstrap seeds)
+
+
+In the [@Stamatakis_2014] and [@Pattengale_2010] it is suggested to choose the autoMRE option to define the end of the Phylogenetic bootstrapping and the auto_MRE is the appropriate for small sequences (< 200). In our case we analysed all of them using the autoMRE bootstop method (even Cluster 23, which had 1700 sequences).
+
+The appropriate model was GTR with Gamma heterogeneity model of rate. 
+
+The output of the RaXmL runs with these options includes , a bootstrap file , two bipartition files with and without the branchlengths and a Maximum Likelihood Best tree. So our next step will be to gather the inofrmation from the Bootstrap file and create a consensus Tree. 
+
+This procedure is appropriate in order to get a phylogenetic signal of the viruses.
+
+The results and the subsampling strategy are shown in Chapter 3.3.
+
+\newpage
+
+## SubSampling the Monophyletics
+
+### Cluster 1
+
+The 1st Monophyletic Cluster is Cluster 1, it has 100 sequences 48.31% of the original size 207 , as we may observe the  the tree is  divided into 3 subclusters the Taiwan - Belgium (purple - yellow), the blue (Trinidad and Tobacco) and the green so we pick 2 randomly out of each sub-cluster.
+
+![](./ConsTrees/Cluster1/Cluster1.pdf)
+
+\newpage
+
+### Cluster 2
+
+The 2nd Monophyletic Cluster is Cluster 2, it has 16 sequences 13.56% of the original size which was 118, as we may observe the tree is not divided in any subcluster. This is a subcluster of the original Cluster 2 , which was mostly populated by Asian DNA samples, so we Randomly pick 4.
+
+![](./ConsTrees/Cluster2/Cluster2.pdf)
+
+\newpage
+
+### Cluster 3
+
+The 3rd Monophyletic Cluster is Cluster 3, it has 132 sequences 71.35% of the original size which was 185, as we may observe the tree is  divided into 2 subclusters the Cuban and a Chinese - European we pick 3 randomly out of Cuban and 4 of the others.
+
+![](./ConsTrees/Cluster3/Cluster3.pdf)
+
+\newpage
+
+### Cluster 4
+
+The 4th Monophyletic Cluster is Cluster 4, it has 93 sequences 64.14% of the original size which was 144, as we may observe the tree is not divided into any particular subset, so we pick randomly 8 sequences, because of close phylogenetic distance.
+
+![](./ConsTrees/Cluster4/Cluster4.pdf)
+
+\newpage
+
+### Cluster 5
+
+The 5th Monophyletic Cluster is Cluster 5, it has 40 sequences 65.57% of the original size which was 61, as we may observe the tree is divided into 2 subclusters a Cuban , a European and a Korean, so we pick 2 randomly out of each sub-cluster.
+
+![](./ConsTrees/Cluster5/Cluster5.pdf)
+
+\newpage
+
+### Cluster 6
+
+The 6th Monophyletic Cluster is Cluster 6, it has 15 sequences 28.3% of the original size which was 53, as we may observe the tree is  divided into 2 subclusters a Cuban , a European and we pick 2 randomly out of each sub-cluster.
+
+![](./ConsTrees/Cluster6/Cluster6.pdf)
+
+\newpage
+
+### Cluster 7 
+
+The 7th Monophyletic Cluster is Cluster 7, it has 25 sequences 49.02% of the original size which was 51, as we may observe the tree is  divided into 3 subclusters a Cuban, a Chinese - European, and a only European so we pick 4 randomly out of each sub-cluster, because they appear to have great distance and we need to representation.
+
+![](./ConsTrees/Cluster7/Cluster7.pdf)
+
+\newpage
+
+### Cluster 8
+
+
+The 8th Monophyletic Cluster is Cluster 8, it has 27 sequences 46.55% of the original size which was 58, as we may observe the tree is  divided into 2 subclusters a Caribbean with mostly Trinidad and Tobacco sequences and a mixed one with American and European sequences. We pick 2 from the solid first and 6 from the second because of the great distance between them.
+
+![](./ConsTrees/Cluster8/Cluster8.pdf)
+
+\newpage
+
+### Cluster 9
+
+The 9th Monophyletic Cluster is Cluster 9, it has 17 sequences 45.95% of the original size which was 37 , as we may observe the  tree is  divided into 2 subclusters a solid Cuban and a European so we pick 2 randomly out of each sub-cluster.
+
+![](./ConsTrees/Cluster9/Cluster9.pdf)
+
+\newpage
+
+### Cluster 10
+
+The 10th Monophyletic Cluster is Cluster 10, it has 39 sequences 84.78% of the original size which was 46, as we may observe the tree is  divided into 3 subclusters a solid Cuban a solid Taiwanesse and a European so we pick 2 randomly out of each sub-cluster.
+
+![](./ConsTrees/Cluster10/Cluster10.pdf)
+
+\newpage
+
+### Cluster 11
+
+The 11th Monophyletic Cluster is Cluster 11, it has 20 sequences 62.5% of the original size 32, as we may observe the tree is  divided into many subclusters 8 countries in a 20 sequences dataset with almost equal representation so we pick 8 randomly.
+
+![](./ConsTrees/Cluster11/Cluster11.pdf)
+
+\newpage
+
+### Cluster 12
+
+
+The 12th Monophyletic Cluster is Cluster 12, it has 19 sequences 63.33% of the original size 30, as we may observe the  the tree is  divided into 2 subclusters a solid latvian we pick 2 randomly and aloose European we pick 6
+
+![](./ConsTrees/Cluster12/Cluster12.pdf)
+
+\newpage
+
+### Cluster 13
+
+The 13th Monophyletic Cluster is Cluster 13, it has 22 sequences 66.67% of the original size 33, as we may observe the tree is not divided to any subcluster so we pick randomly 5 sequences.
+
+![](./ConsTrees/Cluster13/Cluster13.pdf)
+
+\newpage
+
+### Cluster 14
+
+The 14th Monophyletic Cluster is Cluster 14, it has 26 sequences 78.79% of the original size 33, as we may observe the tree is  divided into 3 subclusters a Serbo-Bulgarian, a Slovenian and a Taiwanianand we pick 2 randomly out of each sub-cluster.
+
+![](./ConsTrees/Cluster14/Cluster14.pdf)
+
+\newpage
+
+### Cluster 15
+
+The 15th Monophyletic Cluster is Cluster 15, it has 17 sequences 51.52% of the original size 33, as we may observe the tree is  divided into 2 subclusters a Danish and an Euro-American we pick 2 randomly out of each sub-cluster.
+
+![](./ConsTrees/Cluster15/Cluster15.pdf)
+
+\newpage
+
+### Cluster 16
+
+The 16th Monophyletic Cluster is Cluster 16, it has 27 sequences 75% of the original size 36, as we may observe the  the tree is  divided into 2 sub clusters an Austrian and a French-Asian , and we pick 3 randomly out of each sub-cluster.
+
+![](./ConsTrees/Cluster16/Cluster16.pdf)
+
+\newpage
+
+### Cluster 17
+
+The 17th Monophyletic Cluster is Cluster 17, it has 28 sequences 75.68% of the original size 37, as we may observe the tree is  divided into 3 subclusters a solid Sewdish-Italian, a Spanish and a mixed European and we pick 2 randomly out of each.
+
+![](./ConsTrees/Cluster17/Cluster17.pdf)
+
+\newpage
+
+### Cluster 18
+
+The 18th Monophyletic Cluster is Cluster 18, it has 34 sequences 87.18% of the original size 39, as we may observe the tree is not divided into any particular sub cluster 11 countries for 34 sequences, almost equally represented. We pick 2 from Italy and random 5 of all others.
+
+![](./ConsTrees/Cluster18/Cluster18.pdf)
+
+\newpage
+
+### Cluster 19
+
+The 19th Monophyletic Cluster is Cluster 19, it has 33 sequences 75% of the original size 44, as we may observe the  tree is  divided into 2 subclusters the Greco-Cypriot and all others, so we pick 2 randomly.
+
+![](./ConsTrees/Cluster19/Cluster19.pdf)
+
+\newpage
+
+### Cluster 20
+
+The 20th Monophyletic Cluster is Cluster 20, it has 40 sequences 86.96% of the original size 46, as we may observe the tree is  divided into 2 subclusters a Slovenian and a Taiwanese we pick 2 randomly out of each.
+
+![](./ConsTrees/Cluster20/Cluster20.pdf)
+
+\newpage
+
+### Cluster 21
+
+The 21st Monophyletic Cluster is Cluster 21, it has 136 sequences 95.1% of the original size 143, as we may observe the tree is  divided into 2 subclusters Greek and Roumanian and we pick 4 randomly out of each sub-cluster.
+
+![](./ConsTrees/Cluster21/Cluster21.pdf)
+
+\newpage
+
+### Cluster 22
+
+The 22nd Monophyletic Cluster is Cluster 22, it has 230 sequences 95.44% of the original size 241, as we may observe the tree is  divided into 3 subclusters a polish, an Ukranian and a Bulgarian we pick 4 randomly out of each sub-cluster.
+
+![](./ConsTrees/Cluster22/Cluster22.pdf)
+
+\newpage
+
+### Cluster 23
+
+The Cluster 23 was randomly picked.
+
+
+### Cluster 25
+
+The 24th Monophyletic Cluster is Cluster 25 we pick them all.
+
+
+### Random Pick from sequences without any Cluster Information
+
+The previous sub sampling method collected 200 sequences and took into consideration : 
+
+* The proportional representation of the clusters
+* The genetic distance in each cluster
+* to keep intact any phylogenetic properties
+
+A randomly choosen Data-Set of 200 sequences was also picked. 
+
+
+The part of the original Dataset with no Cluster information was randomly sampled with 300 sequences, 500 sequences and 700 sequences. Then we combined these DataSets into 3 All Randomly picked DataSets (500 , 700 and 900 sequences) and 3 Semi-Randomly picked Datasets (500 , 700 and 900 sequences)
+
+# Phylodynamic Analysis
+
+We have 6 datasets in order to run the phylodynamic analysis. 
+The All Random sized 500 , 700  and 900 were we randomly picked 200 sequences out of the Clustered Dataset and 300 - 500 -700 out of the non Clustered Data-set and the Semi Random sized were we picked 200 sequences out of the Consensus Trees out of the clustered and the same random 200 - 500 -700 out of the non Clustered Data-set. 
+In order to speed the phylodynamic Analysis done by the Beast v1.8.x program we will assess each one of the 6 Data-Set's Maximum Likelihood Best Tree as a starting tree. I order to find the ML Best Tree we will use the RaXmL once again, with the same options. 
+
+The parameters we inserted into the Beauti program were :
+
+1. The Data-Sets
+2. The Guess Date was specified by the information of the tips
+3. The Substitution Model was GTR with Gamma Heterogeneity Model and 4 categories
+4. The Molecular Clock correction was Uncorrealated Lognormal Relaxed Clock as proposed by [@Drummond_2006]
+5. The Maximul Likelihood Best Tree reported from RaXmL for each Data-Set
+6. Operator Tuning !! <-- !!
+7. The length of Chain was set to 100,000,000 with Echo and Log at every 10,000
+
+## Results
+
+For all the Data-Sets the origin could not be identified in detail. The Molecular clock analysis revealed that the time of the mostrecent common ancestor (tMRCA) was in 1960 (95%HPD: 1950-1970). The Model suggested a rapid increase in number of infections lasting between 1975 and 1985. After then new infections seem to be detected into Eastern Europe Countries. 
+
+
+# References
+
+
+

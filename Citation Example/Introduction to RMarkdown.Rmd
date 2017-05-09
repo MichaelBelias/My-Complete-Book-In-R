@@ -1,0 +1,377 @@
+---
+title: ''
+author: ''
+date: ''
+output:
+  html_document:
+    css: APAStyle.css
+    fig_caption: yes
+    highlight: espresso
+    includes:
+      in_header: headerlogo.tex
+    theme: null
+  pdf_document:
+    highlight: pygments
+    includes:
+      in_header: headerlogo.tex
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
+  word_document:
+    reference: APA.docx
+fontsize: 12pt
+csl: Harvard2.csl
+bibliography: citations.bib
+---
+
+\newpage
+
+# Introduction
+
+## Epidemiology
+ 
+Epidemiology is the study of the distribution and determinants of health-related states or events (including disease), and the application of this study to the control of diseases and other health problems. Various methods can be used to carry out epidemiological investigations: surveillance and descriptive studies can be used to study distribution; analytical studies are used to study determinants[@WHO].
+
+## Molecular epidemiology
+
+A definition of molecular epidemiology (Schulte, 1993) defines it as "the use of biological markers or biological measurements in epidemiological research." This definition limits molecular epidemiology only to biomarker study. A straightforward classification of a biomarker classifies its use into four types, those that: (1) improve assessment of exposure, (2) identify the underlying mechanisms of disease and disease transmission, (3) identify subgroups of the population that are more susceptible to the effects of pathogens or pathogenic substances, and (4) identify subgroups of cases with more homogenous disease to better clarify the role of various aetiologic agents (Rabkin & Rothman, 2001). Overall, molecular epidemiology studies measure biologic response (such as mutations) to specific exposures (mutagens) and assess the interplay of host characteristics such as genotype and phenotype in gene expression, and development of disease and response to therapy. Molecular epidemiology is also useful in diagnosis, prognosis, and follow-up of therapeutic results. Molecular epidemiology is a technique-based discipline. [@Chattopadhyay]
+
+
+
+## HIV
+The human immunodeficiency virus (HIV) is a lentivirus (a subgroup of retroviruses) that causes HIV infection and acquired immunodeficiency syndrome (AIDS) [@Weiss]. Human immunodeficiency viruses are separated in two major groups (HIV-1 and HIV-2) and are the result of multiple cross-species transmissions of simian immunodeficiency viruses (SIVs) naturally infecting African primates. Most of these transfers resulted in viruses that spread in humans to only a limited extent. However, one transmission event, involving SIV-cpz from chimpanzees in south-eastern Cameroon, gave rise to HIV-1 group M-the principal cause of the AIDS pandemic [@Greene_2007].
+
+
+![Figure.1](./png/Figure1.png)
+
+*Fig 0.1   Phylogenetic relationship of primate lentivirus. The pol gene of primate lentivirus was used to generate the unrooted tree. Two of the viruses presented in the tree (HIV-1 group N and SIVagm SAB have mosaic genomes. The small arrows in the tree indicate where the sequences would branch in an env gene tree ([@HIV_Sumposium_1999]  (accessed on November 2004).*
+
+## Group M
+Group M, which is responsible for the majority of infections in the worldwide HIV-1 epidemic, can be further subdivided into 10 recognized phylogenetic subtypes, or clades (A to K), which are approximately equidistant from one another. 
+Within group M, the average inter-subtype genetic variability is 15% for the gag gene and 20-30% for the env gene while the pol gene shows only a 10% genetic divergence [@Camacho]. 
+Clades B and D are more closely related to each other than to other subtypes, and clade D is considered the early clade B African variant, but their original designation as subtypes is retained by authors for consistency with earlier published works ( [@Gao], [@Louwagie]).
+Classification of HIV-1 subtypes was originally based on the sub genomic regions of individual genes. However, with an increasing number of viral isolates available worldwide and improvements in sequencing methods, HIV-1 phylogenetic classifications are currently based either on nucleotide sequences derived from multiple sub genomic regions (gag, pol, and env) of the same isolates or on full-length genome sequence analysis. This approach has revealed virus isolates in which phylogenetic relations with different subtypes switch along their genomes[@Peeters]. 
+According to recent studies, on a global scale the most prevalent HIV-1 genetic forms are subtypes A, B, and C, with subtype C accounting for more than 50% of all HIV-1 infections worldwide.
+
+![Figure.1](./png/Figure2.png)
+
+*Fig 0.2 The frequency of each HIV-1 subtype and recombinant form was estimated in each country based on published findings. A complete breakdown of subtype prevalence per country and the countries present in each region are listed in the Supplementary information S1 (table). The countries are colour-coded based on the dominant HIV-1 group main (M) subtype. The countries coloured grey have a low level of HIV-1 prevalence or were not represented in the scientific literature related to HIV-1 subtype prevalence. The pie charts depict the proportion of each subtype or recombinant form in each geographical region. The size of the pies is proportional to the number of HIV-1 infected individuals in that particular region. [@Ari_n_2007].* 
+
+
+## Subtype B
+
+Subtype B is the main genetic form in western and central Europe, the Americas, and Australia and is also common in several countries of South-east Asia, northern Africa, and the Middle East and among South African and Russian homosexual men[@Buonaguro_2007]. 
+
+## AIDS
+
+Acquired Immune Deficiency Syndrome (AIDS) was first recognized as a new disease in 1981 when increasing numbers of young homosexual men succumbed to unusual opportunistic infections and rare malignancies  [@Greene_2007]. A retrovirus, now termed human immunodeficiency virus type 1 (HIV-1), was subsequently identified as the causative agent of what has since become one of the most devastating infectious diseases to have emerged in recent history ( [@Barre_Sinoussi_1983]; [@Gallo_1984]; [@Popovic_1984]). HIV-1 spreads by sexual, percutaneous, and perinatal routes; however, 80% of adults acquire HIV-1 following exposure at mucosal surfaces, and AIDS is thus primarily a sexually transmitted disease ([@Hladik_2008]; [@Cohen_2011]). Since its first identification almost three decades ago, the pandemic form of HIV-1, also called the main (M) group, has infected at least 60 million people and caused more than 25 million deaths[@Merson_2008]. Developing countries have experienced the greatest HIV/AIDS morbidity and mortality, with the highest prevalence rates recorded in young adults in sub-Saharan Africa (http://www.unaids.org/). Although antiretroviral treatment has reduced the toll of AIDS- related deaths, access to therapy is not universal, and the prospects of curative treatments and an effective vaccine are uncertain ([@Barouch_2008]; [@Richman_2009]). Thus, AIDS will continue to pose a significant public health threat for decades to come.
+One of the major characteristics of lentiviruses is their extensive genetic variability, which is the result of the high error rate, the recombinogenic properties of the reverse transcriptase enzyme and the fast turnover of virions in HIV infected individuals. [@Drosopoulos_1998]
+
+## Phylogenetic Analysis
+
+Phylogenetics  is the study of the evolutionary history and relationships among individuals or groups of organisms (e.g. species, or populations).These relationships are discovered through phylogenetic inference methods that evaluate observed heritable traits, such as DNA sequences or morphology under a model of evolution of these traits. The result of these analyses is a phylogeny (also known as a phylogenetic tree) - a hypothesis about the history of evolutionary relationships. The tips of a phylogenetic tree can be living organisms or fossils. Phylogenetic analyses have become central to understanding biodiversity, evolution, ecology, and genomes. [@Phylogeny]
+
+## Viral Phylodynamics 
+
+Viral phylodynamics is defined as the study of how epidemiological, immunological, and evolutionary processes act and potentially interact to shape viral phylogenies. A great research on viral phylodynamics has focused on transmission dynamics in an effort to shed light on how these dynamics impact viral genetic variation [@Grenfell_2004]. 
+Viral Phylodynamics can help us in three problems :
+
+* Viral origins: The rapid rate of evolution in viruses allows molecular clock models to be estimated from genetic sequences, thus providing a per-year rate of evolution of the virus. With the rate of evolution measured in real units of time, it is possible to infer the date of the most recent common ancestor (MRCA) for a set of viral sequences.
+
+* Viral Spread :
+Phylodynamic models may provide insight into epidemiological parameters that are difficult to assess through traditional surveillance means.
+
+* Viral control efforts :
+
+Phylodynamic approaches can also be useful in ascertaining the effectiveness of viral control efforts, particularly for diseases with low reporting rates. For example, the genetic diversity of the DNA-based hepatitis B virus declined in the Netherlands in the late 1990s, following the initiation of a vaccination program [@van_Ballegooijen_2009].
+
+
+In our case we will mostly study the first issue. 
+
+
+## Molecular Clock Assumption
+
+A hypothesis that predicts a constant rate of molecular evolution among species. It is also a method of genetic analysis that can be used to estimate evolutionary rates and timescales using data from DNA or proteins. This is a very strict assumption not applicable to viruses like HIV, so the use of ** Relaxed Molecular Clocks** is necessary. The relaxed molecular clock is a statistical model of molecular evolution that allows the evolutionary rate to vary amongst organisms (in our case HIV)[@Ho_2013]. 
+
+### Relaxed Molecular Clocks
+
+Relaxed molecular clock models take into account rate variation across lineages and have been proposed in order to obtain better estimates of divergence times [@Drummond_2006].  They represent an intermediate position between the 'strict' molecular clock hypothesis and Joseph Felsenstein's many-rates model[@Felsenstein_2001] and are made possible through MCMC techniques that explore a weighted range of tree topologies and simultaneously estimate parameters of the chosen substitution model. It must be remembered that divergence dates inferred using a molecular clock are based on statistical inference and not on direct evidence.
+
+
+
+
+## Molecular Epidemiology in HIV
+
+Molecular epidemiology of (HIV-1) subtype B has been studied extensively since it's discovery, as it quickly became the dominant subtype of the virus in the economically developed world, especially among men who have sex with other men [@Felsenstein_2001]. With international transportation becoming more affordable than in the past, interaction between persons who live with the virus has increased, and that appears to have been a reason for the spread of the epidemic within the European region, as migration pathways of the virus have been observed between the countries of Europe [@Paraskevis_2009]. 
+
+
+\newpage
+
+# Data Collection
+
+## Initial Dataset
+
+This study is based on the 2009 study of Magiorkinis et al [@Magiorkinis_2009]. 
+The original Dataset had 8,370 sequences of HIV-1 Subtype - B which were collected from 79 countries across the world. The collection of the sequences was divided into two strategies :
+* Systematic research through the PubMed Database 
+* The addition of two highly acknowledged and sophisticated European researches CATCH and SPREAD.
+
+
+### The European Data-Set
+
+The European part of the Data-Set included sequences from two European studies : the Combined Analysis of Resistance Transmission over Time of Chronically and Acute Infected HIV Patients (CATCH) and the SPREAD (Strategy to Control SPREAD of HIV Drug Resistance) collaboration. The SPREAD study included 4480 newly diagnosed patients sampled during 9/2002-12/2007 from 20 European countries and Israel. In the prospective setting a standardised sampling 
+The subtype B global dispersal strategy was designed to include representative sampling from all countries ([@Vercauteren_2009]; [@Wensing_2008]). For the purpose of this study we included only those classified as subtype B from both the CATCH and the SPREAD studies. The CATCH study 2208 antiretroviral naïve individuals from 18 European countries and Israel during 1996-2002 [@Wensing_2005].
+
+### The Non-European Data-Set
+
+The Non-European Data-Set was collected through systematic bibliographic search in PubMed using the following keywords "HIV-1", "molecular epidemiology", "resistance", "subtype B" and "pol" in various combinations, cleaned of different Subtypes only keeping the subtype B . The later sampling criteria were: i) in cases where more than one study was available for one country, we included only those sequences isolated from different areas of that country, ii) in cases where the sampling areas were not described in the studies from the same country, to avoid redundant sequences, we only included sequences from the largest study, iii) similarly for studies performed at the same centres or cities, iv) from longitudinal studies concerning mainly resistance to antiretroviral therapy, we included only the oldest available sequence per patient, and v) we excluded studies concerning mother to child transmission.[@Magiorkinis_2009]
+
+## Monophyletic clusters extraction
+
+
+
+
+\newpage
+
+# Current Thesis.
+## Operating Systems - Statistical Packages and R-Packages Used.
+
+For the completion of my thesis 2 main Operating systems were used:
+
+* Windows 8.1 - Windows 10
+* Ubuntu Linux 15.04
+
+The Statistical Packages were :
+
+1.R [@R] `r R.Version()$version`
+
+2.R-Studio[@RStudio] `RStudio Desktop 0.99.892`
+
+3.Python 2.7.11
+
+
+The packages used :
+
+* for phylogenetic analysis and Beast Input Manipulation
+
+a. phangorn [@phangorn]
+
+b. ape [@ape]
+
+c. Rphylip [@Rphylip]
+
+d. phytools [@phytools]
+
+e. ips [@ips]
+
+f. XML [@XML]
+
+g. ggtree [@ggtree]
+
+* Other Packages:
+
+a. ggplot2 [@ggplot2]
+
+b. knitr [@knitr]
+
+c. rworldmap [@rworldmap]
+
+d. png [@png]
+
+e. RMySQL [@RMySQL]
+
+For the writing I used the `Rmarkdown` [@rmarkdown] package with **LaTeX**.
+
+## Analysis
+
+The original Data-Set had a 
+6979 sequences left after we deleted all sequences without sampling years and the most vital for my study part were kept. The ID , the Submission Country , the region , the monophyletic Cluster it belongs and the sequence.
+
+### Alignment of the Sequences 
+
+The sequences were aligned using mafft version 7 a multiple sequence alignment program for Unix-like operating systems[@Katoh_2002]. I preferred
+
+
+
+
+
+**Note**: In order to compile the RMarkdown document, save the following files to the same folder as [this document][id1]:
+
+* [APA.docx][id2] This file is a template to create MS Word documents in APA Style. The template is a work in progress and thus does not get everything exactly right.
+* [APAStyle.css][id3] This file provides APA-like styling for HTML output. You can make .css files to format text and other HTML elements in almost any way you want.
+* [apa.csl][id4] This file tells R Markdown how to format citations in APA Style.
+* [citations.bib][id5] This file contains a few citations in BibTeX format.
+
+# R Markdown
+
+[Markdown][id6] is a really simple way to format documents. [R Markdown][id7] is a variant of Markdown that works in [RStudio][id8].
+
+# This is a Level 1 header
+
+This is a regular paragraph. Extra       spaces between words are eliminated.
+Even though this 
+sentence is broken
+across many lines, 
+it is
+grouped with the text
+above it.
+
+Put an empty line between paragraphs.
+
+You can't see them but if you put 2 or more spaces  
+at the end  
+of a line,  
+there is a line break.
+
+## This is a Level 2 header
+
+### Guess which level header this is!
+
+# Formatting text
+
+*This is italicized.*
+
+**This is bolded.**
+
+~~Strikethrough~~
+
+Superscript^2^
+
+>This is for blockquotes.
+>It can go on for 
+>many
+>lines.
+>
+>This is the second paragraph in a blockquote. In my .css file, I  have formatted it so that it will be indented.
+
+
+
+```
+Text enclosed in three backquotes (```) will appear in a monospace type. 
+
+It will appear exactly 
+as
+   you 
+       type it,
+without the typical formatting.
+
+For example,
+*normally this would be italicized.*
+```
+
+# Lists
+Let's make an unordered list
+
+* First bullet point
+* Second bullet point
+    - Indented bullet point (2 tabs or 4 spaces)
+    - Another indented bullet point
+        + Further indentation (4 tabs or 8 spaces)
+
+Let's make an ordered list
+
+1. My first topic
+    1. Sub topic 1
+    2. Sub topic 2
+2. My second topic
+    * Subtopic (2 tabs or 4 spaces)
+    * Another subtopic    
+    This is a indented paragraph in the middle of a list (2 tabs or 4 spaces).
+    * Yet another subtopic
+3. My third topic
+
+
+# Links
+
+[This is a link to my homepage.](http://my.ilstu.edu/~wjschne/)
+
+# Images
+
+
+
+# Equations using LaTeX
+
+$$f(X)=\dfrac{1}{\sigma\sqrt{2\pi}}e^{-\frac{1}{2}\left(\dfrac{X-\mu}{\sigma}\right)^2}$$
+
+# Simple Tables
+
+Left        |Center         |Right
+:-----------|:-------------:|------------:
+1           |2              |3            
+4           |5              |6            
+7           |8              |9            
+
+# Combining R and Markdown
+
+## R code chunks
+
+```{r}
+EvenNumbersUnder100<-seq(2,98,2)
+```
+
+This code chunk will run but it will not appear in the document.
+
+```{r,echo=FALSE}
+X<-cos(pi)
+```
+
+This code chunk will appear in the document but it will not run.
+
+```{r,eval=FALSE}
+Y<-tan(pi/4)
+```
+
+## Inline R code
+
+You can refer to calculations in your text. For example, the cosine of $\pi$ radians is `r cos(pi)`. In fact, you can refer to any R object (e.g., the mean and standard deviation of a variable.)
+
+## Let's make a pretty plot with R:
+
+```{r test1,dev='png',echo=-1}
+# If converting to Word, change dev to png.
+par(family = "serif")
+x <- 0:20
+y <- dpois(x,lambda = 3)
+plot(y~x,type="b",col="royalblue2",lty=3,pch=19,main=expression("Poisson Distribution "*(lambda == 3)),xlab="Sample Space",ylab="Probability",bty="n",las=1)
+```
+
+## APA Formatted tables!
+```{r,results='asis'}
+n<-1000 #Sample size
+g<-rnorm(n) #Normal variate
+s1<-g+rnorm(n) #Correlated variate
+s2<-g+rnorm(n) #Correlated variate
+d<-cbind(g,s1,s2) #Bind columns into a matrix
+dcor<-round(cor(d),2) #Correlation matrix (rounded to 2 digits)
+dcor[lower.tri(dcor,diag=TRUE)]<-"" #Remove lower triangle
+knitr::kable(dcor,align = "c") #Make table with centered columns
+```
+
+# Citations
+
+As explained [here][id9], if you use the bibliography tag, you can insert citations with the @ symbol and the citation's unique ID. A variety of citation file formats are supported and a huge number of citation styles are [available][id10]. I am using the [BibTeX file format][id11] with the [APA (6^th^ Edition) citation style][id12].
+
+For example, here are some recent papers of mine . In this paper, @schneider2013if [p. 186-187] says a bunch of stuff. 
+
+ Tools like these make managing references much, much easier than doing it all by hand. The references below appear like magic, all perfectly formatted.
+
+
+\newpage
+
+# References
+
+<!---
+Below are reference links. They refer to links specified by the id tags elsewhere in the document. The advantage of using reference links is that they make the markdown document easier to read. That is, long links are ugly to look at and interrupt the flow of the text.
+-->
+[id1]: http://my.ilstu.edu/~wjschne/442/Introduction%20to%20RMarkdown.Rmd "Introduction to Markdown"
+[id2]: http://my.ilstu.edu/~wjschne/442/APA.docx "APA Template in Word"
+[id3]: http://my.ilstu.edu/~wjschne/442/APAStyle.css "APA .css file"
+[id4]: http://my.ilstu.edu/~wjschne/442/apa.csl "APA .cls file"
+[id5]: http://my.ilstu.edu/~wjschne/442/citations.bib "References in BibTex"
+[id6]: http://daringfireball.net/projects/markdown/basics "Markdown Basics"
+[id7]: http://rmarkdown.rstudio.com/ "RMarkdown in RStudio"
+[id8]: http://www.rstudio.com/ "RStudio"
+[id9]: http://rmarkdown.rstudio.com/authoring_bibliographies_and_citations.html "RMarkdown Citations"
+[id10]: https://zotero.org/styles "Zotero"
+[id11]: http://www.bibtex.org/ "BibTex"
+[id12]: https://zotero.org/styles/apa "APA citation style in .cls file"

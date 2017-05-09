@@ -1,0 +1,39 @@
+\usepackage{titling}
+\usepackage{color}
+\definecolor{RB_blue}{RGB}{0, 108, 149}
+
+\pretitle{
+  \begin{center}
+  \color{RB_blue}
+  \huge{\bf A Guide to Bayesian Modeling}
+  
+\vspace{6.0cm}
+\setlength{\arrayrulewidth}{0.5mm}
+\setlength{\tabcolsep}{18pt}
+\renewcommand{\arraystretch}{1.5}
+
+ \color{black}
+\includegraphics[]{logo.jpg}\\[\bigskipamount]
+\vspace{6.0cm}
+\begin{flushright}
+\begin{tabular}{ c }
+
+\small  Author: Belias Michael\\ 
+\small  Student in MSc in Biostatistics\\
+\small Athens, 20 April 2016\\
+
+\end{tabular}
+\end{flushright}
+\newpage
+ }
+\posttitle{\end{center}}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\rhead{\includegraphics[width = .07 \textwidth]{small_logo.jpg}}
+\fancyfoot[CE,CO]{\leftmark}
+\fancyfoot[LE,RO]{\thepage}
+ 
+\renewcommand{\headrulewidth}{2pt}
+\renewcommand{\footrulewidth}{1pt}
+\paperheight = 875pt

@@ -1,0 +1,778 @@
+---
+title: "Bayesian Analysis"
+author: "Michael Belias"
+date: "April 20, 2017"
+output:
+  pdf_document:
+    highlight: monochrome
+    includes:
+      in_header: headerlogo.tex
+    number_sections: yes
+    toc: yes
+    toc_depth: 2
+  html_document:
+    css: APAStyle.css
+    fig_caption: yes
+    highlight: espresso
+    includes:
+      in_header: headerlogo.tex
+    theme: null
+  word_document:
+    toc: yes
+    toc_depth: '3'
+fontsize: 12pt
+csl: Harvard2.csl
+bibliography: citations.bib
+---
+
+
+\fontfamily{ptm}
+\fontsize{14}{22}
+\selectfont
+
+\newpage
+
+# Introduction
+
+According to the Oxford dictionary, statistics is a branch of mathematics dealing with the collection, analysis, interpretation, presentation, and organization of data. Data may be of any applied science field such as medical, finance, social, physics etc and they can be separated into 2 types quantitative and qualitative.  
+
+
+The typical steps of a statistical analysis are seven in general : 
+
+  1) Define the problem 
+  
+  2) Data collection and manipulation 
+  
+  3) Explore the data 
+  
+  4) Using the above three decide the model that will be used
+  
+  5) Fit the model
+  
+  6) Check the model and develop if necessary
+  
+  7) Make the final model and infere
+  
+ 
+The above step are not distinct and in some cases there are overlaps and more steps nested. The same principles can be applied in the Bayesian Framework too.
+
+In this tutorial we will learn:
+  
+  * The bayesian intuition
+  * Fit the bayesian methods in simple popular statistical approaches such as:
+      + (M)ANOVA
+      + Linear Regression
+      + Poisson regression
+  * Multi-lelel modeling
+      + Hierarchical models
+      + Meta analysis
+
+
+\newpage
+
+# Common probability distributions
+
+## Discrete distributions
+
+### Uniform
+The uniform distribution is the simplest discrete probability distribution. It assigns equal probability to N different outcomes, usually represented with numbers 1,2,....,N .
+
+X ~ Uniform(N)
+
+$P(X = x|N) = 1/N$ for x = 1,2,...N
+
+$E[X]= \frac{N+1}{2}$
+
+$Var[X]= \frac{N^2+1}{12}$
+
+One common example is the outcome of throwing a fair six-sided die where N=6. 
+
+
+```{r,echo=FALSE}
+set.seed(51)
+library(ggplot2)
+library(knitr)
+x= sample(1:6, size = 10000, replace = T)
+barplot(table(x), col = "darkgreen" , axes = F)
+```
+
+
+\newpage
+
+
+### Bernoulli
+
+The Bernoulli distribution is used for binary outcomes, such as 0 and 1. 
+It has one parameter p, which is the probability of "success" frequently geting 1 (or any value we set).
+X ~ Bern(p)
+
+$P(X = x | p) = p^x(1-p)^{1-x}$ for x = 0, 1
+
+E[X] = p
+
+Var[X] = p(1-p)
+
+One common example is the outcome of flipping a fair coin (p = 0.5)
+
+\newpage
+
+### Binomial
+
+The binomial distribution counts the number of "successes" in n independent Bernoulli trials
+(each with the same probability of success). Thus if $X_1 , X_2 ,..., X_n$ are independent Bernoulli(p) random variables, then Y = $\sum^n_{i=1} X_i$ is binomial distributed.
+
+Y ~Binom(n, p)
+
+P(Y= y|n,p) = $\binom{n}{y} {p^y}(1-p)^{(n-y)}$ , for y = 0,1, ..., n
+
+E[Y] =np
+
+Var[Y]= np(1-p)
+
+where $\binom{n}{y}= \frac{n!}{y!(n-y)!}$ .
+
+\newpage
+
+
+### Poisson
+
+The Poisson distribution is used for counts, and arises in a variety of situations. The parameter $\lambda$ > 0 is the rate at which we expect to observe the thing we are counting.
+
+X~Pois($\lambda$)
+
+$P(X= x|\lambda) = \frac{\lambda^xexp(-\lambda)}{x!}$
+
+E[X] = $\lambda$
+
+Var[X] = $\lambda$
+
+A Poisson process is a process wherein events occur on average at rate $\lambda$, events occur one at a time, and events occur independently of each other.
+
+Example: 
+
+Significant earthquakes occur in the Western United States approximately following a Poisson process with rate of two earthquakes per week. What is the probability
+there will be at least 3 earthquakes in the next two weeks? Answer: the rate per two weeks is
+2*2 = 4, so let X ~Pois(4) and we want to know 
+$P(X \geq 3)=1-(X\leq 2) =1- P(X = 0) - P( X = 1 ) - P( X = 2) =1 - e^{-4} _ 4e^{-4} -\frac{4^2 e^{-4}}{2} = 1 - 13e^{-4} = 0.762$
+
+
+
+Note that 0! = 1  by definition.
+\newpage
+
+### Geometric
+
+
+The geometric distribution is the number of failures before obtaining the first success, i.e., the number of Bernoulli failures until a success is observed, such as the first head when flipping a coin. It takes values on the positive integers starting with 0 (alternatively, we could count total trials until first success, in which case we would start with 1).
+
+X~Geo(p)
+
+$P(X=x|p) = p(1-p)^x$ , for x=1,2,...
+
+$E[X] = \frac{1-p}{p}$
+
+If the probability of getting a success is p, then the expected number of trials until the first success is 1=p and the expected number of failures until the first success is (1 - p)=p.
+
+
+\newpage
+
+### Negative Binomial
+The negative binomial distribution extends the geometric distribution to model the number of failures before achieving the rth success. It takes values on the positive integers starting
+with 0.
+
+
+Y~NegBinom(r,p)
+
+P(Y= y|n,p) = $\binom{r + y - 1}{y} {p^r}(1-p)^{(y)}$ for y=1,2,...
+
+E[Y] = $\frac{r(1-p)}{p}$
+
+Var[Y] = $\frac{r(1-p)}{p^2}$
+
+Note that the geometric distribution is a special case of the negative binomial distribution where r = 1.
+Because 0 < p < 1, we have E[Y] < Var[Y]. This makes the negative binomial a popular alternative to the Poisson when modeling counts with high variance (recall, that the mean equals the variance for Poisson distributed variables). 
+
+\newpage
+
+
+### Multinomial
+
+Another generalization of the Bernoulli and the binomial is the multinomial distribution, which is like a binomial when there are more than two possible outcomes. Suppose we have n trials and there are k different possible outcomes which occur with probabilities $p_1,p_2,... p_k$. 
+For example, we are rolling a six-sided die that might be loaded so that the sides are not equally likely, then n is the total number of rolls, k = 6, p1 is the probability of rolling a one, and we denote by $x_1,x_2, ...,x_6$ a possible outcome for the number of times we observe rolls of
+each of one through six, where $\sum_{i=1}^{6}x_i = n$ and $\sum_{i=1}^{6}p_i = 1$
+
+\newpage
+
+
+# Bayesian Theory
+## History
+
+  Bayesian statistics are based on the homonymous Bayes' theorem or rule, invented by Thomas Bayes, which was a british reverend the 1740s . His primary field of studying was theology but Bayes was also "amateur" mathematician. He was influenced by David Hume a philosopher teacher while his studies in Edinburgh proposing that we can only rely on what we learn from experience. The probabilities as a mathematical field these days where just emerging being able to solve simple problems like *what is the probability of observing an effect given a cause?* but not the inverse P(cause | effect). Bayes gave a simple example of tossing balls on a table and recording where they stop (to the left or to the right side of the table), noting that the more balls are thrown, the better we may infere if the ball-tosing is bias to a side. This is nowadays called a learning process and although it was a remarkable finding Bayes forgot it in a drawer (!) until his death.Richard Price found it and after studing his papers for 2 years and making some corrections he finally published **An Essay toward solving a Problem in the Doctrine of Chances”. 1763**. 
+
+Still the theorem was just an example not having the final form of today and even after this publication no-one really continued the development except of Laplace, who was trying to solve an astronomical problem , studied Price's paper developed a first version of what we now call Bayes theorem. The reception of Laplace's proposal  was slightly hostile due to the inherent challenges such as the equal prior probabilities, being subjective and the serious technical computational problems in practice, which is still a great issue .
+
+\newpage
+
+## Bayes theorem
+
+
+Bayes theorem is calculating the probability event given prior knowledge of conditions that might be related to the event. Bayes' theorem is stated mathematically as the following equation [@Efron1177] :
+
+${P(A\mid B)={\frac {P(B\mid A)\,P(A)}{P(B)}}}$ 
+
+${P(A\mid B)={\frac {P(B\mid A)\,P(A)}{P(B)}}}$
+
+where A and B are events and P(B) $\neq$ 0.
+
+* P(A) and P(B) are the probabilities of observing A and B without regard to each other.
+* P(A | B), a conditional probability, is the probability of observing event A given that B is true.
+* P(B | A) is the probability of observing event B given that A is true.
+
+This is the basis of Bayesian inference which is a particular approach to statistical inference, with it's own interpretation and  When applied, the probabilities involved in Bayes’ theorem may have different probability interpretations. With the Bayesian probability interpretation the theorem expresses how a subjective degree of belief should rationally change to account for availability of related evidence. Bayesian inference is fundamental to Bayesian statistics.
+
+\newpage
+
+# Monte Carlo estimation
+
+## Simulation and CLT
+
+Before we learn how to simulate from complicated posterior distributions, let’s review some of the basics of Monte Carlo estimation. Monte Carlo estimation refers to simulating hypothetical draws from a probability distribution in order to calculate important quantities. These quantities might include the mean, the variance, the probability of some event, or quantiles of the distribution. All of these calculations involve integration, which except for the simplest distributions, can be very difficult or impossible.
+
+Suppose we have a random variable $\hat \theta$ that follows a Gamma(a,b). Let’s say a=2 and b=1/3 , where b is the rate parameter. To calculate the mean of this distribution, we would need to compute the following integral
+
+$$\text{E}(\theta) = \int_0^\infty \theta f(\theta) d\theta = \int_0^\infty \theta \frac{b^a}{\Gamma(a)}\theta^{a-1}e^{-b\theta} d\theta \,$$
+
+It is possible to compute this integral, and the answer is a/b (6 in this case). However, we could verify this answer through Monte Carlo  estimation. To do so, we would simulate a large number of draws (call them $\theta_i^*$ for i = 1,2,...,m) from this gamma distribution and calculate their sample mean. Why can we do this? Recall from the previous course that if we have a random sample from a distribution, the average of those samples converges in probability to the true mean of that distribution by the Law of Large Numbers. Furthermore, by the Central Limit Theorem (CLT), this sample mean $\bar \theta^* = \frac{1}{m} \sum_{i=1}^{m} \theta_i^*$ approximately follows a normal distribution with mean E($\theta$) and variance Var($\theta$)/m. The theoretical variance of $\theta$ is the following integral: $$\text{Var}(\theta) = \int_0^\infty (\theta-E(\theta))^2 f(\theta) d\theta \,$$
+
+Just like we did with the mean, we could approximate this variance with the sample variance $\frac{1}{m}\sum_{i=1}^m (\theta_i^* - \bar{\theta}^*)^2$
+
+
+##Calculating probabilities
+
+This method can be used to calculate many different integrals. Say h($\theta$) is any function and we want to calculate $\int h(\theta) p(\theta) d\theta$ This integral is precisely what is meant by E(h($\theta$)), so we can conveniently approximate it by taking the sample mean of h($\theta_i^*$). That is, we apply the function hh to each simulated sample from the distribution, and take the average of all the results. 
+
+One extremely useful example of an hh function is is the indicator $I_A(\theta)$ where A is some logical condition about the value of $\theta$. To demonstrate, suppose $h(\theta) = I_{[\theta<5]}(\theta)$ , which will give a 1 if $\theta<5$ and 0 otherwise.
+
+The E(h($\theta$)) = $\int_0^\infty I_{[\theta<5]}(\theta) p(\theta) d\theta = \int_0^5 1 \cdot p(\theta) d\theta + \int_5^\infty 0 \cdot p(\theta) d\theta = P(\theta < 5) \,$ . 
+This means we can approximate the probability that $\theta < 5$ by drawing many samples $\theta_i^*$ , and approximating this integral with  $\frac{1}{m} \sum_{i=1}^m I_{\theta^* < 5} (\theta_i^*)$. This expression is simply counting how many of those samples come out to be less than 55, and dividing by the total number of simulated samples. So simple!
+
+Likewise, we can approximate quantiles of a distribution. If we are looking for the value $\zeta$ such that P($\theta$ < z) = 0.9 , we simply arrange the samples $\theta_i^*$ in ascending order and find the smallest drawn value that is greater than 90% of the others.
+
+## Monte Carlo error
+
+How good is an approximation by Monte Carlo sampling? Again we can turn to the CLT, which tells us that the variance of our estimate is controlled in part by m . For a better estimate, we want larger m . 
+
+For example, if we seek E($\theta$), then the sample mean $\bar \theta^*$ approximately follows a normal distribution with mean  E($\theta$) and variance  Var($\theta$)/m. The variance tells us how far our estimate might be from the true value. One way to approximate  Var($\theta$) is to replace it with the sample variance. The standard deviation of our Monte Carlo estimate is the square root of that, or the sample standard deviation divided by $\sqrt m$. If m is large, it is reasonable to assume that the true value will likely be within about two standard deviations of your Monte Carlo estimate.
+
+## Marginalization
+
+We can also obtain Monte Carlo samples from hierarchical models. As a simple example, let’s consider a binomial random variable where $y \mid \phi \sim \text{Bin}(10, \phi)$,  and further suppose $\phi$ is random (as if it had a prior) and is distributed beta $\phi ~ Beta(2,2)$. Given any hierarchical model, we can always write the joint distribution of y and $\phi$ as $p(y, \phi) = p(y \mid \phi)p(\phi)$ using the chain rule of probability. To simulate from this joint distribution, repeat these steps for a large number m : 
+
+* Simulate $\phi_i^*$ rom its Beta(2,2)distribution
+* Given the drawn $\phi_i^*$ ,simulate $y_i^*$ from $\text{Bin}(10, \phi_i^*)$ 
+
+This will produce m independent pairs of $(y^*, \phi^*)_i$ drawn from their joint distribution. One major advantage of Monte Carlo simulation is that marginalizing is easy. Calculating the marginal distribution of y, $p(y) = \int_0^1 p(y, \phi) d\phi$ might be challenging. But if we have draws from the joint distribution, we can just discard the $\phi_i^*$ raws and use the $y_i^*$as samples from their marginal distribution. This is also called the prior predictive distribution introduced in the previous course. 
+
+In the next segment, we will demonstrate some of these principles. Remember, we do not yet know how to sample from the complicated posterior distributions introduced in the previous lesson. But once we learn that, we will be able to use the principles from this lesson to make approximate inferences from those posterior distributions.
+
+\newpage
+
+# Markov chains
+
+Definition
+If we have a sequence of random variables $X_1,X_2,...,X_n$ where the indices *1,2,…,n* represent successive points in time, we can use the chain rule of probability to calculate the probability of the entire sequence:
+
+$p(X_{t+1} | X_t, X_{t-1}, \ldots, X_2, X_1 ) = p(X_{t+1} | X_t) \,$
+
+Markov chains simplify this expression by using the *Markov assumption*. The assumption is that given the entire past history, the probability distribution for the random variable at the next time step only depends on the current variable. Mathematically, the assumption is written like this:
+
+$p(X_{t+1} | X_t, X_{t-1}, \ldots, X_2, X_1 ) = p(X_{t+1} | X_t) \,$
+
+for all *t=2,…,n*. Under this assumption, we can write the first expression as
+$p(X_1, X_2, \ldots X_n) = p(X_1) \cdot p(X_2 | X_1) \cdot p(X_3 | X_2) \cdot p(X_4 | X_3) \cdot \ldots \cdot p(X_n | X_{n-1}) \, ,$
+
+
+which is much simpler than the original. It consists of an initial distribution for the first variable, $P(X_1)$ , and **n - 1** transition probabilities. We usually make one more assumption: that the transition probabilities do not change with time. Hence, the transition from time tt to time **t+1** depends only on the value of $X_t$.
+
+## Examples of Markov chains
+### Discrete Markov chain
+
+Suppose you have a secret number (make it an integer) between 1 and 5. We will call it your initial number at *step 1*. Now for each time step, your secret number will change according to the following rules:
+
+1. Flip a coin.
+2. 
+  + If the coin turns up heads, then increase your secret number by one (5 increases to 1).
+  + If the coin turns up tails, then decrease your secret number by one (1 decreases to 5).
+
+3. Repeat *n** times, and record the evolving history of your secret number.
+
+
+Before the experiment, we can think of the sequence of secret numbers as a sequence of random variables, each taking on a value in **{1,2,3,4,5}**. Assume that the coin is fair, so that with each flip, the probability of heads and tails are both 0.5.
+
+Does this game qualify as a true Markov chain? Suppose your secret number is currently 4 and that the history of your secret numbers is **(2,1,2,3)**. What is the probability that on the next step, your secret number will be 5? What about the other four possibilities? Because of the rules of this game, the probability of the next transition will depend only on the fact that your current number is 4. The numbers further back in your history are irrelevant, so this is a Markov chain.
+
+This is an example of a discrete Markov chain, where the possible values of the random variables come from a discrete set. Those possible values (secret numbers in this example) are called states of the chain. The states are usually numbers, as in this example, but they can represent anything. In one common example, the states describe the weather on a particular day, which could be labeled as 1-fair, 2-poor.
+
+### Random walk (continuous)
+
+Now let’s look at a continuous example of a Markov chain. Say Xt=0Xt=0 and we have the following transition model: $p(X_{t+1} | X_t=x_t) = \text{N}(x_t, 1),$. That is, the probability distribution for the next state is Normal with variance 1 and mean equal to the current state. This is often referred to as a “random walk.” Clearly, it is a Markov chain because the transition to the next state  $X_{t+1}$only depends on the current state $X_t$.
+
+**R-code**
+
+```{r}
+set.seed(34)
+
+n = 100
+x = numeric(n)
+
+for (i in 2:n) {
+  x[i] = rnorm(1, mean=x[i-1], sd=1.0)
+}
+
+plot.ts(x)
+```
+
+
+### Transition matrix
+Let’s return to our example of the discrete Markov chain. If we assume that transition probabilities do not change with time, then there are a total of $5^2 = 25$ potential transition probabilities. Potential transition probabilities would be from *State 1* to *State 2*, *State 1* to *State 3*, and so forth. These transition probabilities can be arranged into a matrix *Q*:
+
+$$Q = 
+\begin{pmatrix}
+0 & .5 & 0 & 0 & .5 \\
+.5 & 0 & .5 & 0 & 0 \\
+0 & .5 & 0 & .5 & 0 \\
+0 & 0 & .5 & 0 & .5 \\
+.5 & 0 & 0 & .5 & 0 \\
+\end{pmatrix}$$
+
+
+where the transitions from *State 1*are in the first row, the transitions from *State 2* are in the second row, etc. For example, the probability $p(X_{t+1} = 5 \mid X_t = 4)$ can be found in the fourth row, fifth column.
+
+The transition matrix is especially useful if we want to find the probabilities associated with multiple steps of the chain. For example, we might want to know $p(X_{t+2}=3 \mid X_t=1)$ , the probability of your secret number being 3 two steps from now, given that your number is currently 1. We can calculate this as $\sum_{k=1}^5 p(X_{t+2}=3 \mid X_{t+1}=k) \cdot p(X_{t+1}=k \mid X_t=1)$ , which conveniently is found in the first row and third column of $Q^2$.
+
+
+**R-code**
+
+```{r}
+Q = matrix(c(0.0, 0.5, 0.0, 0.0, 0.5,
+             0.5, 0.0, 0.5, 0.0, 0.0,
+             0.0, 0.5, 0.0, 0.5, 0.0,
+             0.0, 0.0, 0.5, 0.0, 0.5,
+             0.5, 0.0, 0.0, 0.5, 0.0), 
+           nrow=5, byrow=TRUE)
+
+Q %*% Q # Matrix multiplication in R. This is Q^2.
+```
+
+### Stationary distribution
+
+Suppose we want to know the probability distribution of the your secret number in the distant future, say $p(X_{t+h} | X_t)$ where *h* is a large number. Let’s calculate this for a few different values of *h*.
+
+```{r}
+Q5 = Q %*% Q %*% Q %*% Q %*% Q # h=5 steps in the future
+round(Q5, 3)
+```
+
+```{r}
+Q10 = Q %*% Q %*% Q %*% Q %*% Q %*% Q %*% Q %*% Q %*% Q %*% Q # h=10 steps in the future
+round(Q10, 3)
+```
+
+```{r}
+Q30 = Q
+for (i in 2:30) {
+  Q30 = Q30 %*% Q
+}
+round(Q30, 3) # h=30 steps in the future
+```
+
+Notice that as the future horizon gets more distant, the transition distributions appear to converge. The state you are currently in becomes less important in determining the more distant future. If we let hh get really large, and take it to the limit, all the rows of the long-range transition matrix will become equal to *(.2,.2,.2,.2,.2)*. That is, if you run the Markov chain for a very long time, the probability that you will end up in any particular state is *1/5=.2* for each of the five states. These long-range probabilities are equal to what is called the stationary distribution of the Markov chain.
+
+The stationary distribution of a chain is the initial state distribution for which performing a transition will not change the probability of ending up in any given state. That is,
+
+
+```{r}
+c(0.2, 0.2, 0.2, 0.2, 0.2) %*% Q
+```
+
+One consequence of this property is that once a chain reaches its stationary distribution, the stationary distribution will remain the distribution of the states thereafter.
+
+We can also demonstrate the stationary distribution by simulating a long chain from this example.
+
+```{r}
+n = 5000
+x = numeric(n)
+x[1] = 1 # fix the state as 1 for time 1
+for (i in 2:n) {
+  x[i] = sample.int(5, size=1, prob=Q[x[i-1],]) # draw the next state from the intergers 1 to 5 with probabilities from the transition matrix Q, based on the previous value of X.
+}
+```
+
+Now that we have simulated the chain, let’s look at the distribution of visits to the five states.
+
+
+```{r}
+table(x) / n
+```
+
+The overall distribution of the visits to the states is approximately equal to the stationary distribution.
+
+As we have just seen, if you simulate a Markov chain for many iterations, the samples can be used as a Monte Carlo sample from the stationary distribution. This is exactly how we are going to use Markov chains for Bayesian inference. In order to simulate from a complicated posterior distribution, we will set up and run a Markov chain whose stationary distribution is the posterior distribution.
+
+It is important to note that the stationary distribution doesn’t always exist for any given Markov chain. The Markov chain must have certain properties, which we won’t discuss here. However, the Markov chain algorithms we’ll use in future lessons for Monte Carlo estimation are guaranteed to produce stationary distributions.
+
+### Continuous example
+
+
+The continuous random walk example we gave earlier does not have a stationary distribution. However, we can modify it so that it does have a stationary distribution.
+
+Let the transition distribution be $p(X_{t+1} | X_t=x_t) = \text{N}(\phi x_t, 1)$ where *-1<$\phi$<1* .That is, the probability distribution for the next state is Normal with variance 1 and mean equal to $\phi$ times the current state. As long as $\phi$ is between *-1 *and* 1*, then the stationary distribution will exist for this model.
+
+Let’s simulate this chain for $\phi = -0.6$.
+
+```{r}
+set.seed(38)
+
+n = 1500
+x = numeric(n)
+phi = -0.6
+
+for (i in 2:n) {
+  x[i] = rnorm(1, mean=phi*x[i-1], sd=1.0)
+}
+
+plot.ts(x)
+```
+
+The theoretical stationary distribution for this chain is normal with mean 0 and variance 1/(1-$\phi^2$) which in our example approximately equals *1.562*. Let’s look at a histogram of our chain and compare that with the theoretical stationary distribution.
+
+
+```{r,echo=FALSE}
+hist(x, freq=FALSE)
+curve(dnorm(x, mean=0.0, sd=sqrt(1.0/(1.0-phi^2))), col="red", add=TRUE)
+legend("topright", legend="theoretical stationary\ndistribution", col="red", lty=1, bty="n")
+```
+
+It appears that the chain has reached the stationary distribution. Therefore, we could treat this simulation from the chain like a Monte Carlo sample from the stationary distribution, a normal with mean *0* and variance *1.562*.
+
+Because most posterior distributions we will look at are continuous, our Monte Carlo simulations with Markov chains will be similar to this example.
+
+
+\newpage
+
+
+## Monte Carlo Example 
+
+\newpage
+
+# Metropolis-Hastings
+
+Metropolis-Hastings is an algorithm that allows us to sample from a generic probability distribution (which we will call the target distribution), even if we do not know the normalizing constant. To do this, we construct and sample from a Markov chain whose stationary distribution is the target distribution. It consists of picking an arbitrary starting value, and iteratively accepting or rejecting candidate samples drawn from another distribution, one that is easy to sample.
+
+Let’s say we wish to produce samples from a target distribution $p(\theta) \propto g(\theta)$ where we don’t know the normalizing constant (since $\int g(\theta) d\theta$ is hard or impossible to compute), so we only have $g(\theta)$ to work with. The Metropolis-Hastings algorithm proceeds as follows.
+
+1. Select an initial value $\theta_0$ .
+2. For i=1,…,m  repeat the following steps:
+
+* Draw a candidate sample $\theta^*$ from a proposal distribution $q(\theta^* \mid \theta_{i-1})$ (more on this later).
+*Compute the ratio $\alpha = \frac{g(\theta^*) / q(\theta^* \mid \theta_{i-1}) }{g(\theta_{i-1}) / q(\theta_{i-1} \mid \theta^*)} = \frac{g(\theta^*)q(\theta_{i-1} \mid \theta^*)}{g(\theta_{i-1})q(\theta^* \mid \theta_{i-1})} \,$.
+
+If $\alpha \ge 1$, then set $\theta_i = \theta^*$ 
+If $\alpha < 1$, then set $\theta_i = \theta^*$ with probability $\alpha$, or $\theta_i = \theta_{i-1}$ with probability 1-$\alpha$.
+
+Steps 2b and 2c act as a correction since the proposal distribution is not the target distribution. At each step in the chain, we draw a candidate and decide whether to “move” the chain there or remain where we are. If the proposed move to the candidate is “advantageous,” ($\alpha \ge 1$) we “move” there and if it is not “advantageous,” we still might move there, but only with probability $\alpha$. Since our decision to “move” to the candidate only depends on where the chain currently is, this is a Markov chain.
+
+##Proposal distribution
+One careful choice we must make is the candidate generating distribution$q(\theta^* \mid \theta_{i-1})$ It may or may not depend on the previous iteration’s value of $\theta$.  One example where it doesn’t depend on the previous value would be if $q(\theta)$is always the same distribution. If we use this option, $q(\theta)$ should be as similar as possible to $p(\theta)$.
+
+Another popular option, one that does depend on the previous iteration, is Random-Walk Metropolis-Hastings. Here, the proposal distribution is centered on $\theta_{i-1}$. For instance, it might be a normal distribution with mean $\theta_{i-1}$. Because the normal distribution is symmetric, this example comes with another advantage: $q(\theta^* \mid \theta_{i-1}) = q(\theta_{i-1} \mid \theta^*)$, causing it to cancel out when we calculate $\alpha$. Thus, in Random-Walk Metropolis-Hastings where the candidate is drawn from a normal with mean $\theta_{i-1}$ and constant variance, the acceptance ratio is $\alpha = \frac{g(\theta^*) }{g(\theta_{i-1})}$.
+
+## Acceptance rate
+Clearly, not all candidate draws are accepted, so our Markov chain sometimes “stays” where it is, possibly for many iterations. How often you want the chain to accept candidates depends on the type of algorithm you use. If you approximate $p(\theta)$ with $q(\theta^*)$and always draw candidates from that, accepting candidates often is good; it means $q(\theta^*)$is approximating $p(\theta)$ well. However, you still may want qq to have a larger variance than pp and see some rejection of candidates as an assurance that qq is covering the space well.
+
+As we will see in coming examples, a high acceptance rate for the Random-Walk Metropolis-Hastings sampler is not a good thing. If the random walk is taking too small of steps, it will accept often, but will take a very long time to fully explore the posterior. If the random walk is taking too large of steps, many of its proposals will have low probability and the acceptance rate will be low, wasting many draws. Ideally, a random walk sampler should accept somewhere between 23% and 50% of the candidates proposed.
+
+In the next segment, we will see a demonstration of this algorithm used in a discrete case, where we can show mathematically that the Markov chain converges to the target distribution. In the following segment, we will demonstrate coding a Random-Walk Metropolis-Hastings algorithm in  R to solve one of the problems from the end of Lesson 2.
+
+\newpage
+
+\newpage
+
+
+# Popular Models 
+
+\newpage
+
+
+## Linear Regression
+
+\newpage
+
+
+## (M)ANOVA
+
+\newpage
+
+
+
+## Poisson regression
+
+\newpage
+
+# Multi-level modeling
+
+\newpage
+
+
+## Hierarchical models
+
+
+### Data
+
+Let’s fit our hierarhical model for counts of chocolate chips. The data can be found in 
+
+```{r,echo=F}
+dat = read.table(file="Data/cookies.dat", header=TRUE)
+kable(head(dat,10), caption = "First 10 values" ) 
+```
+
+```{r,echo=F}
+table(dat$location)
+```
+
+We can also visualize the distribution of chips by location.
+
+```{r,echo=F}
+hist(dat$chips, main = "Histogram of  chocolate chips in total")
+```
+
+```{r,echo=F}
+boxplot(chips ~ location, data=dat,main="Boxplot of Cookie production")
+```
+
+
+### Prior predictive checks
+
+Before implementing the model, we need to select prior distributions for $\alpha$ and $\beta$, the hyperparameters governing the gamma distribution for the $\lambda$ parameters. First, think about what the $\lambda$’s represent. For location j, $\lambda_j$ is the expected number of chocolate chips per cookie. Hence, $\alpha$ and $\beta$ control the distribution of these means between locations. The mean of this gamma distribution will represent the overall mean of number of chips for all cookies. The variance of this gamma distribution controls the variability between locations. If this is high, the mean number of chips will vary widely from location to location. If it is small, the mean number of chips will be nearly the same from location to location.
+
+To see the effects of different priors on the distribution of $\lambda$’s, we can simulate. Suppose we try independent exponential priors for $\alpha$ and $\beta$.
+
+```{r,echo=F}
+set.seed(112)
+n_sim = 500
+alpha_pri = rexp(n_sim, rate=1.0/2.0)
+beta_pri = rexp(n_sim, rate=5.0)
+mu_pri = alpha_pri/beta_pri
+sig_pri = sqrt(alpha_pri/beta_pri^2)
+
+summary(mu_pri)
+```
+
+```{r,echo=F}
+summary(sig_pri)
+```
+
+After simulating from the priors for $\alpha$ and $\beta$, we can use those samples to simulate further down the hierarchy:
+
+```{r,echo=F}
+lam_pri = rgamma(n=n_sim, shape=alpha_pri, rate=beta_pri)
+summary(lam_pri)
+```
+
+Or for a prior predictive reconstruction of the original data set:
+
+```{r,echo=F, comment="" }
+(lam_pri = rgamma(n=5, shape=alpha_pri[1:5], rate=beta_pri[1:5]))
+```
+
+```{r,echo=F, comment="" }
+(y_pri = rpois(n=150, lambda=rep(lam_pri, each=30)))
+```
+
+Because these priors have high variance and are somewhat noninformative, they produce unrealistic predictive distributions. Still, enough data would overwhelm the prior, resulting in useful posterior distributions. Alternatively, we could tweak and simulate from these prior distributions until they adequately represent our prior beliefs. Yet another approach would be to re-parameterize the gamma prior, which we’ll demonstrate as we fit the model.
+
+
+```{r,echo=F, message=FALSE, warning=FALSE}
+library("rjags")
+
+mod_string = " model {
+for (i in 1:length(chips)) {
+  chips[i] ~ dpois(lam[location[i]])
+}
+
+for (j in 1:max(location)) {
+  lam[j] ~ dgamma(alpha, beta)
+}
+
+alpha = mu^2 / sig^2
+beta = mu / sig^2
+
+mu ~ dgamma(2.0, 1.0/5.0)
+sig ~ dexp(1.0)
+
+} "
+```
+
+
+```{r,echo=F, message=FALSE, comment=""}
+set.seed(113)
+
+data_jags = as.list(dat)
+
+params = c("lam", "mu", "sig")
+
+mod = jags.model(textConnection(mod_string), data=data_jags, n.chains=3)
+update(mod, 1e3)
+
+mod_sim = coda.samples(model=mod,
+                       variable.names=params,
+                       n.iter=5e3)
+mod_csim = as.mcmc(do.call(rbind, mod_sim))
+
+
+
+par(mar = rep(3, 4))
+## convergence diagnostics
+plot(mod_sim)
+
+gelman.diag(mod_sim)
+autocorr.diag(mod_sim)
+autocorr.plot(mod_sim)
+effectiveSize(mod_sim)
+
+## compute DIC
+dic = dic.samples(mod, n.iter=1e3)
+```
+
+### Model checking
+After assessing convergence, we can check the fit via residuals. With a hierarhcical model, there are now two levels of residuals: the observation level and the location mean level. To simplify, we’ll look at the residuals associated with the posterior means of the parameters.
+
+First, we have observation residuals, based on the estimates of location means.
+```{r, comment=""}
+## observation level residuals
+(pm_params = colMeans(mod_csim))
+```
+
+```{r, comment=""}
+yhat = rep(pm_params[1:5], each=30)
+resid = dat$chips - yhat
+plot(resid)
+```
+
+```{r, comment=""}
+plot(jitter(yhat), resid)
+```
+
+```{r, comment=""}
+var(resid[yhat<7])
+```
+
+```{r, comment=""}
+var(resid[yhat>11])
+```
+
+```{r, comment=""}
+## location level residuals
+lam_resid = pm_params[1:5] - pm_params["mu"]
+plot(lam_resid)
+abline(h=0, lty=2)
+```
+
+We don’t see any obvious violations of our model assumptions.
+
+### Results
+
+```{r,comment=""}
+summary(mod_sim)
+```
+
+### Random intercept linear model
+
+We can extend the linear model for the Leinhardt data on infant mortality by incorporating the region variable. We’ll do this with a hierarhcical model, where each region has its own intercept.
+
+```{r,echo=FALSE,comment=""}
+library("car")
+data("Leinhardt")
+?Leinhardt
+str(Leinhardt)
+
+pairs(Leinhardt)
+
+head(Leinhardt)
+```
+
+
+Previously, we worked with infant mortality and income on the logarithmic scale. Recall also that we had to remove some missing data.
+
+```{r,echo=FALSE,comment=""}
+dat = na.omit(Leinhardt)
+dat$logincome = log(dat$income)
+dat$loginfant = log(dat$infant)
+str(dat)
+```
+
+Now we can fit the proposed model:
+
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE, comment=""}
+library("rjags")
+
+mod_string = " model {
+  for (i in 1:length(y)) {
+    y[i] ~ dnorm(mu[i], prec)
+    mu[i] = a[region[i]] + b[1]*log_income[i] + b[2]*is_oil[i]
+  }
+  
+  for (j in 1:max(region)) {
+    a[j] ~ dnorm(a0, prec_a)
+  }
+  
+  a0 ~ dnorm(0.0, 1.0/1.0e6)
+  prec_a ~ dgamma(1/2.0, 1*10.0/2.0)
+  tau = sqrt( 1.0 / prec_a )
+  
+  for (j in 1:2) {
+    b[j] ~ dnorm(0.0, 1.0/1.0e6)
+  }
+  
+  prec ~ dgamma(5/2.0, 5*10.0/2.0)
+  sig = sqrt( 1.0 / prec )
+} "
+
+set.seed(116)
+data_jags = list(y=dat$loginfant, log_income=dat$logincome,
+                  is_oil=as.numeric(dat$oil=="yes"), region=as.numeric(dat$region))
+data_jags$is_oil
+table(data_jags$is_oil, data_jags$region)
+
+params = c("a0", "a", "b", "sig", "tau")
+
+mod = jags.model(textConnection(mod_string), data=data_jags, n.chains=3)
+update(mod, 1e3) # burn-in
+
+mod_sim = coda.samples(model=mod,
+                       variable.names=params,
+                       n.iter=5e3)
+
+mod_csim = as.mcmc(do.call(rbind, mod_sim)) # combine multiple chains
+
+par(mar = rep(3, 4))
+## convergence diagnostics
+plot(mod_sim)
+
+gelman.diag(mod_sim)
+autocorr.diag(mod_sim)
+autocorr.plot(mod_sim)
+effectiveSize(mod_sim)
+```
+
+
+\newpage
+
+
+## Meta analysis
+
+\newpage
+
+
+# Bibliography
