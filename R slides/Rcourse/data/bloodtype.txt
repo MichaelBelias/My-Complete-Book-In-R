@@ -1,0 +1,5 @@
+	male	female
+A	23	34
+B	34	25
+AB	21	12
+O	27	33

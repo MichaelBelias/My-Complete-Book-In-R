@@ -494,7 +494,303 @@ As we will see in coming examples, a high acceptance rate for the Random-Walk Me
 
 In the next segment, we will see a demonstration of this algorithm used in a discrete case, where we can show mathematically that the Markov chain converges to the target distribution. In the following segment, we will demonstrate coding a Random-Walk Metropolis-Hastings algorithm in  R to solve one of the problems from the end of Lesson 2.
 
+## Random walk with normal likelihood, t prior
+
+Recall the model from the last segment of Lesson 2 where the data are the percent change in total personnel from last year to this year for *n=10* companies. We used a normal likelihood with known variance and *t* distribution for the prior on the unknown mean. Suppose the values are *y=(1.2,1.4,-0.5,0.3,0.9,2.3,1.0,0.1,1.3,1.9)* . Because this model is not conjugate, the posterior distribution is not in a standard form that we can easily sample. To obtain posterior samples, we will set up a Markov chain whose stationary distribution is this posterior distribution.
+
+Recall that the posterior distribution is: 
+
+$$p(\mu \mid y_1, \ldots, y_n) \propto \frac{\exp[ n ( \bar{y} \mu - \mu^2/2)]}{1 + \mu^2}$$
+The posterior distribution on the left is our target distribution and the expression on the right is our g($\mu$).
+
+The first thing we can do in R is write a function to evaluate g($\mu$). Because posterior distributions include likelihoods (the product of many numbers that are potentially small), g($\mu$) might evaluate to such a small number that to the computer, it effectively zero. This will cause a problem when we evaluate the acceptance ratio $\alpha$. To avoid this problem, we can work on the log scale, which will be more numerically stable. Thus, we will write a function to evaluate
+
+$$\log(g(\mu)) = n ( \bar{y} \mu - \mu^2/2) - \log(1 + \mu^2)$$
+
+This function will require three arguments, $\mu$ , $\bar{y}$ and n.
+
+```{r}
+lg = function(mu, n, ybar) {
+  mu2 = mu^2
+  n * (ybar * mu - mu2 / 2.0) - log(1 + mu2)
+}
+```
+
+Next, let’s write a function to execute the Random-Walk Metropolis-Hastings sampler with normal proposals.
+
+```{r}
+mh = function(n, ybar, n_iter, mu_init, cand_sd) {
+  ## Random-Walk Metropolis-Hastings algorithm
+  
+  ## step 1, initialize
+  mu_out = numeric(n_iter)
+  accpt = 0
+  mu_now = mu_init
+  lg_now = lg(mu=mu_now, n=n, ybar=ybar)
+  
+  ## step 2, iterate
+  for (i in 1:n_iter) {
+    ## step 2a
+    mu_cand = rnorm(n=1, mean=mu_now, sd=cand_sd) # draw a candidate
+    
+    ## step 2b
+    lg_cand = lg(mu=mu_cand, n=n, ybar=ybar) # evaluate log of g with the candidate
+    lalpha = lg_cand - lg_now # log of acceptance ratio
+    alpha = exp(lalpha)
+    
+    ## step 2c
+    u = runif(1) # draw a uniform variable which will be less than alpha with probability min(1, alpha)
+    if (u < alpha) { # then accept the candidate
+      mu_now = mu_cand
+      accpt = accpt + 1 # to keep track of acceptance
+      lg_now = lg_cand
+    }
+    
+    ## collect results
+    mu_out[i] = mu_now # save this iteration's value of mu
+  }
+  
+  ## return a list of output
+  list(mu=mu_out, accpt=accpt/n_iter)
+}
+```
+
+Now, let’s set up the problem.
+
+```{r}
+y = c(1.2, 1.4, -0.5, 0.3, 0.9, 2.3, 1.0, 0.1, 1.3, 1.9)
+ybar = mean(y)
+n = length(y)
+hist(y, freq=FALSE, xlim=c(-1.0, 3.0)) # histogram of the data
+curve(dt(x=x, df=1), lty=2, add=TRUE) # prior for mu
+points(y, rep(0,n), pch=1) # individual data points
+points(ybar, 0, pch=19) # sample mean
+```
+
+Finally, we’re ready to run the sampler! Let’s use *m=1000* iterations and proposal standard deviation (which controls the proposal step size) 3.0, and initial value at the prior median 0
+
+
+```{r,comment=""}
+set.seed(43) # set the random seed for reproducibility
+post = mh(n=n, ybar=ybar, n_iter=1e3, mu_init=0.0, cand_sd=3.0)
+str(post)
+
+library("coda")
+traceplot(as.mcmc(post$mu))
+```
+
+This last plot is called a trace plot. It shows the history of the chain and provides basic feedback about whether the chain has reached its stationary distribution.
+
+It appears our proposal step size was too large (acceptance rate below 23%). Let’s try another.
+
+```{r}
+post = mh(n=n, ybar=ybar, n_iter=1e3, mu_init=0.0, cand_sd=0.05)
+post$accpt
+traceplot(as.mcmc(post$mu))
+
+post = mh(n=n, ybar=ybar, n_iter=1e3, mu_init=0.0, cand_sd=0.9)
+post$accpt
+
+traceplot(as.mcmc(post$mu))
+```
+
+Hey, that looks pretty good. Just for fun, let’s see what happens if we initialize the chain at some far-off value.
+
+```{r}
+post = mh(n=n, ybar=ybar, n_iter=1e3, mu_init=30.0, cand_sd=0.9)
+post$accpt
+```
+
+```{r}
+traceplot(as.mcmc(post$mu))
+```
+
+It took awhile to find the stationary distribution, but it looks like we succeeded! If we discard the first 100 or so values, it appears like the rest of the samples come from the stationary distribution, our posterior distribution! Let’s plot the posterior density against the prior to see how the data updated our belief about $\mu$.
+
+```{r}
+post$mu_keep = post$mu[-c(1:100)] # discard the first 200 samples
+plot(density(post$mu_keep, adjust=2.0), main="", xlim=c(-1.0, 3.0), xlab=expression(mu)) # plot density estimate of the posterior
+curve(dt(x=x, df=1), lty=2, add=TRUE) # prior for mu
+points(ybar, 0, pch=19) # sample mean
+
+curve(0.017*exp(lg(mu=x, n=n, ybar=ybar)), from=-1.0, to=3.0, add=TRUE, col="blue") # approximation to the true posterior in blue
+```
+
+
+These results are encouraging, but they are preliminary. We still need to investigate more formally whether our Markov chain has converged to the stationary distribution. We will explore this in a future lesson.
+
+Obtaining posterior samples using the Metropolis-Hastings algorithm can be time-consuming and require some fine-tuning, as we’ve just seen. The good news is that we can rely on software to do most of the work for us. In the next couple of videos, we’ll introduce a program that will make posterior sampling easy.
+
 \newpage
+
+# Gibbs sampling
+
+So far, we have demonstrated MCMC for a single parameter. What if we seek the posterior distribution of multiple parameters, and that posterior distribution does not have a standard form? One option is to perform Metropolis-Hastings (M-H) by sampling candidates for all parameters at once, and accepting or rejecting all of those candidates together. While this is possible, it can get complicated. Another (simpler) option is to sample the parameters one at a time.
+
+As a simple example, suppose we have a joint posterior distribution for two parameters $\theta$ and $\phi$, written $P(\theta,\phi|y) \propto g (\theta,\phi)$ . If we knew the value of $\phi$, then we would just draw a candidate for $\theta$ and use $g(\theta,\phi)$ to compute our Metropolis-Hastings ratio, and possibly accept the candidate. Before moving on to the next iteration, if we don’t know $\phi$, then we can perform a similar update for it. Draw a candidate for $\phi$ using some proposal distribution and again use $g(\theta,\phi)$ to compute our Metropolis-Hastings ratio. Here we pretend we know the value of $\theta$ by substituting its current iteration from the Markov chain. Once we’ve drawn for both $\theta$ and $\phi$, that completes one iteration and we begin the next iteration by drawing a new $\theta$. In other words, we’re just going back and forth, updating the parameters one at a time, plugging the current value of the other parameter into $g(\theta,\phi)$.
+
+This idea of one-at-a-time updates is used in what we call Gibbs sampling, which also produces a stationary Markov chain (whose stationary distribution is the posterior).
+
+
+## Full conditional distributions
+
+Before describing the full Gibbs sampling algorithm, there’s one more thing we can do. Using the chain rule of probability, we have $p(\theta, \phi \mid y) = p(\theta \mid \phi, y) \cdot p(\phi \mid y)$. notice that the only difference between $p(\theta, \phi \mid y)$ and $p(\theta \mid \phi, y)$ is multiplication by a factor that doesn’t involve $\theta$ . Since the $g(\theta,\phi)$ function above, when viewed as a function of $\theta$ is proportional to both these expressions, we might as well have replaced it with $p(\theta \mid  \phi,y)$ in our update for $\theta$.This distribution $p(\theta \mid \phi, y)$  is called the full conditional distribution for $\theta$. Why use it instead of $g(\theta,\phi)$? In some cases, the full conditional distribution is a standard distribution we know how to sample. If that happens, we no longer need to draw a candidate and decide whether to accept it. In fact, if we treat the full conditional distribution as a candidate proposal distribution, the resulting Metropolis-Hastings acceptance probability becomes exactly 1.
+
+Gibbs samplers require a little more work up front because you need to find the full conditional distribution for each parameter. The good news is that all full conditional distributions have the same starting point: the full joint posterior distribution. Using the example above, we have $p(\theta \mid  \phi,y) \propto p(\theta,\phi|y)$
+where we simply now treat $\phi$ as a known number. Likewise, the other full conditional is $p(\phi \mid   \theta ,y) \propto p(\theta,\phi\mid  y)$ where here, we consider $\theta$ to be a known number. We always start with the full posterior distribution. Thus, the process of finding full conditional distributions is the same as finding the posterior distribution of each parameter, pretending that all other parameters are known.
+
+## Gibbs sampler
+
+The idea of Gibbs sampling is that we can update multiple parameters by sampling just one parameter at a time, cycling through all parameters and repeating. To perform the update for one particular parameter, we substitute in the current values of all other parameters.
+
+Here is the algorithm. Suppose we have a joint posterior distribution for two parameters $\theta$ and $\phi$, written $P(\theta,\phi\mid  y)$. If we can find the distribution of each parameter at a time, i.e., $P(\theta \mid   \phi,y)$ and $P(\phi\mid   \theta,y)$, then we can take turns sampling these distributions like so:
+
+1.Using $\phi_{i-1}$draw $\theta_i$ from $P(\theta | \phi= \phi_{i-1} ,y )$ .
+
+2.Using $\theta_i$, draw $\phi_i$   from $P(\phi|\theta=\theta_i,y)$.
+
+Together, steps 1 and 2 complete one cycle of the Gibbs sampler and produce the draw for ($\theta_i , \phi_i$) in one iteration of a MCMC sampler. If there are more than two parameters, we can handle that also. One Gibbs cycle would include an update for each of the parameters.
+
+## Example 
+### Normal likelihood, unknown mean and variance
+
+Let’s make an example, where we have normal likelihood with unknown mean and unknown variance. The model is : 
+$$ \begin{aligned}
+y_i \mid \mu, \sigma^2 &\overset{\text{iid}}{\sim} \text{N} ( \mu, \sigma^2 ), \quad i=1,\ldots,n \\ 
+\mu &\sim \text{N}(\mu_0, \sigma_0^2) \\ 
+\sigma^2 &\sim \text{IG}(\nu_0, \beta_0)  \
+\end{aligned} $$.
+
+We chose a normal prior for $\mu$ because, in the case where $\sigma^2$ is known, the normal is the conjugate prior for $\mu$. Likewise, in the case where $\mu$ is known, the inverse-gamma is the conjugate prior for $\sigma^2$. This will give us convenient full conditional distributions in a Gibbs sampler.
+
+Let’s first work out the form of the full posterior distribution. When we begin analyzing data, the JAGS software will complete this step for us. However, it is extremely valuable to see and understand how this works.
+
+
+$$ \begin{aligned}
+\\
+p( \mu, \sigma^2 \mid y_1, y_2, \ldots, y_n ) &\propto
+p(y_1, y_2, \ldots, y_n \mid \mu, \sigma^2) p(\mu) p(\sigma^2) = \prod_{i=1}^n \text{N} ( y_i \mid \mu, \sigma^2 ) \times \text{N}( \mu \mid \mu_0, \sigma_0^2) \times \text{IG}(\sigma^2 \mid \nu_0, \beta_0) \\
+= \prod_{i=1}^n \frac{1}{\sqrt{2\pi\sigma^2}}\exp \left[ -\frac{(y_i - \mu)^2}{2\sigma^2} \right] \times \frac{1}{\sqrt{2\pi\sigma_0^2}} \exp \left[ -\frac{(\mu - \mu_0)^2}{2\sigma_0^2} \right] \times \frac{\beta_0^{\nu_0}}{\Gamma(\nu_0)}(\sigma^2)^{-(\nu_0 + 1)} \exp \left[ -\frac{\beta_0}{\sigma^2} \right] I_{\sigma^2 > 0}(\sigma^2) \\
+\propto (\sigma^2)^{-n/2} \exp \left[ -\frac{\sum_{i=1}^n (y_i - \mu)^2}{2\sigma^2} \right] \exp \left[ -\frac{(\mu - \mu_0)^2}{2\sigma_0^2} \right] (\sigma^2)^{-(\nu_0 + 1)} \exp \left[ -\frac{\beta_0}{\sigma^2} \right] I_{\sigma^2 > 0}(\sigma^2)
+\end{aligned} $$
+
+From here, it is easy to continue on to find the two full conditional distributions we need. First let’s look at $\mu$, assuming $\sigma^2$ is known (in which case it becomes a constant and is absorbed into the normalizing constant):
+$$\begin{aligned}
+p(\mu \mid \sigma^2, y_1, \ldots, y_n) &\propto p( \mu, \sigma^2 \mid y_1, \ldots, y_n ) \\
+&\propto \exp \left[ -\frac{\sum_{i=1}^n (y_i - \mu)^2}{2\sigma^2} \right] \exp \left[ -\frac{(\mu - \mu_0)^2}{2\sigma_0^2} \right] \\
+&\propto \exp \left[ -\frac{1}{2} \left( \frac{ \sum_{i=1}^n (y_i - \mu)^2}{2\sigma^2} + \frac{(\mu - \mu_0)^2}{2\sigma_0^2} \right) \right] \\
+&\propto \text{N} \left( \mu \mid \frac{n\bar{y}/\sigma^2 + \mu_0/\sigma_0^2}{n/\sigma^2 + 1/\sigma_0^2}, \, \frac{1}{n/\sigma^2 + 1/\sigma_0^2} \right) \, ,
+\end {aligned}$$
+which we derived in the supplementary material of the last course. So, given the data and $\sigma^2$, $\mu$ follows this normal distribution.
+
+Now let’s look at $\sigma^2$, assuming $\mu$ is known:
+$$\begin{aligned}
+p(\sigma^2 \mid \mu, y_1, \ldots, y_n) &\propto p( \mu, \sigma^2 \mid y_1, \ldots, y_n ) \\
+&\propto (\sigma^2)^{-n/2} \exp \left[ -\frac{\sum_{i=1}^n (y_i - \mu)^2}{2\sigma^2} \right] (\sigma^2)^{-(\nu_0 + 1)} \exp \left[ -\frac{\beta_0}{\sigma^2} \right] I_{\sigma^2 > 0}(\sigma^2) \\
+&\propto (\sigma^2)^{-(\nu_0 + n/2 + 1)} \exp \left[ -\frac{1}{\sigma^2} \left( \beta_0 + \frac{\sum_{i=1}^n (y_i - \mu)^2}{2} \right) \right] I_{\sigma^2 > 0}(\sigma^2) \\
+&\propto \text{IG}\left( \sigma^2 \mid \nu_0 + \frac{n}{2}, \, \beta_0 + \frac{\sum_{i=1}^n (y_i - \mu)^2}{2} \right) \, .
+\end{aligned}$$
+
+These two distributions provide the basis of a Gibbs sampler to simulate from a Markov chain whose stationary distribution is the full posterior of both $\mu$ and $\sigma^2$. We simply alternate draws between these two parameters, using the most recent draw of one parameter to update the other.
+
+We will do this in R in the next segment.
+
+#### Gibbs sampler in R
+
+To implement the Gibbs sampler we just described, let’s return to our running example where the data are the percent change in total personnel from last year to this year for *n=10* companies. We’ll still use a normal likelihood, but now we’ll relax the assumption that we know the variance of growth between companies, $\sigma^2$, and estimate that variance. Instead of the t prior from earlier, we will use the conditionally conjugate priors, normal for $\mu$ and inverse-gamma for $\sigma^2$
+
+The first step will be to write functions to simulate from the full conditional distributions we derived in the previous segment. The full conditional for $\mu$, given $\sigma^2$ and data is
+
+$\text{N} \left( \mu \mid \frac{n\bar{y}/\sigma^2 + \mu_0/\sigma_0^2}{n/\sigma^2 + 1/\sigma_0^2}, \, \frac{1}{n/\sigma^2 + 1/\sigma_0^2} \right)$
+
+```{r,echo=FALSE}
+update_mu = function(n, ybar, sig2, mu_0, sig2_0) {
+  sig2_1 = 1.0 / (n / sig2 + 1.0 / sig2_0)
+  mu_1 = sig2_1 * (n * ybar / sig2 + mu_0 / sig2_0)
+  rnorm(n=1, mean=mu_1, sd=sqrt(sig2_1))
+}
+```
+
+The full conditional for $\sigma^2$ given $\mu$ and data is:
+
+$\text{IG}\left( \sigma^2 \mid \nu_0 + \frac{n}{2}, \, \beta_0 + \frac{\sum_{i=1}^n (y_i - \mu)^2}{2} \right)$
+
+```{r,echo=FALSE}
+update_sig2 = function(n, y, mu, nu_0, beta_0) {
+  nu_1 = nu_0 + n / 2.0
+  sumsq = sum( (y - mu)^2 ) # vectorized
+  beta_1 = beta_0 + sumsq / 2.0
+  out_gamma = rgamma(n=1, shape=nu_1, rate=beta_1) # rate for gamma is shape for inv-gamma
+  1.0 / out_gamma # reciprocal of a gamma random variable is distributed inv-gamma
+}
+```
+
+With functions for drawing from the full conditionals, we are ready to write a function to perform Gibbs sampling.
+
+```{r,echo=FALSE}
+gibbs = function(y, n_iter, init, prior) {
+  ybar = mean(y)
+  n = length(y)
+  
+  ## initialize
+  mu_out = numeric(n_iter)
+  sig2_out = numeric(n_iter)
+  
+  mu_now = init$mu
+  
+  ## Gibbs sampler
+  for (i in 1:n_iter) {
+    sig2_now = update_sig2(n=n, y=y, mu=mu_now, nu_0=prior$nu_0, beta_0=prior$beta_0)
+    mu_now = update_mu(n=n, ybar=ybar, sig2=sig2_now, mu_0=prior$mu_0, sig2_0=prior$sig2_0)
+    
+    sig2_out[i] = sig2_now
+    mu_out[i] = mu_now
+  }
+  
+  cbind(mu=mu_out, sig2=sig2_out)
+}
+```
+
+Now we are ready to set up the problem in $\text{R}$.
+
+```{r ,echo=FALSE }
+y = c(1.2, 1.4, -0.5, 0.3, 0.9, 2.3, 1.0, 0.1, 1.3, 1.9)
+ybar = mean(y)
+n = length(y)
+
+## prior
+prior = list()
+prior$mu_0 = 0.0
+prior$sig2_0 = 1.0
+prior$n_0 = 2.0 # prior effective sample size for sig2
+prior$s2_0 = 1.0 # prior point estimate for sig2
+prior$nu_0 = prior$n_0 / 2.0 # prior parameter for inverse-gamma
+prior$beta_0 = prior$n_0 * prior$s2_0 / 2.0 # prior parameter for inverse-gamma
+
+hist(y, freq=FALSE, xlim=c(-1.0, 3.0)) # histogram of the data
+curve(dnorm(x=x, mean=prior$mu_0, sd=sqrt(prior$sig2_0)), lty=2, add=TRUE) # prior for mu
+points(y, rep(0,n), pch=1) # individual data points
+points(ybar, 0, pch=19) # sample mean
+```
+
+```{r,comment="",echo=FALSE }
+set.seed(53)
+
+init = list()
+init$mu = 0.0
+
+post = gibbs(y=y, n_iter=1e3, init=init, prior=prior)
+head(post)
+
+library("coda")
+plot(as.mcmc(post))
+
+
+summary(as.mcmc(post))
+```
+
+As with the Metropolis-Hastings example, these chains appear to have converged. In the next lesson, we will discuss convergence in more detail.
+
 
 \newpage
 
