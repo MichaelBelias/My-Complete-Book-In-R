@@ -796,20 +796,15 @@ As with the Metropolis-Hastings example, these chains appear to have converged. 
 
 
 # Popular Models 
-
 \newpage
-
-
-## Linear Regression
-
-\newpage
-
 
 ## (M)ANOVA
 
 \newpage
 
+## Linear Regression
 
+\newpage
 
 ## Poisson regression
 
@@ -819,9 +814,7 @@ As with the Metropolis-Hastings example, these chains appear to have converged. 
 
 \newpage
 
-
 ## Hierarchical models
-
 
 ### Data
 
