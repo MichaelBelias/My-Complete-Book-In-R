@@ -804,6 +804,35 @@ As with the Metropolis-Hastings example, these chains appear to have converged. 
 
 ## Linear Regression
 
+As an example of linear regression, we’ll look at the Leinhardt data from the car package in R.
+
+```{r, comment=""}
+library("car")
+data("Leinhardt")
+?Leinhardt
+head(Leinhardt)
+```
+
+So the Leinhardt dataset has 105 observations and 4 variables: `r names(Leinhart)`.
+
+```{r, comment=""}
+str(Leinhardt)
+```
+
+So the correlation between the variables is shown by the following paired scatterplot.
+
+```{r, comment=""}
+pairs(Leinhardt)
+```
+
+We’ll start with a simple linear regression model that relates infant mortality to per capita income, but first let's take a look if there is a linear relation between the two variables. This can be easily tested by a scatterplot.
+
+```{r, comment=""}
+plot(infant ~ income, data=Leinhardt)
+```
+
+
+
 \newpage
 
 ## Poisson regression
