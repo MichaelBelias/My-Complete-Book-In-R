@@ -30,6 +30,11 @@ bibliography: citations.bib
 \fontsize{14}{22}
 \selectfont
 
+```{r global_options, include=FALSE }
+knitr::opts_chunk$set(fig.width=12, fig.height=8,
+                      echo=FALSE, warning=FALSE, message=FALSE,comment = "")
+```
+
 \newpage
 
 # Introduction
@@ -795,12 +800,9 @@ As with the Metropolis-Hastings example, these chains appear to have converged. 
 \newpage
 
 
-# Popular Models 
-\newpage
+# Popular one level models 
 
-## (M)ANOVA
-
-### ANOVA
+## ANOVA
 
 As an example of a one-way ANOVA, we’ll look at the Plant Growth data in R.
 
@@ -894,8 +896,6 @@ effectiveSize(mod_sim)
 (pm_params = colMeans(mod_csim))
 ```
 
-
-
 ```{r,comment="",echo=FALSE,fig.height=9 }
 yhat = pm_params[1:3][data_jags$grp]
 resid = data_jags$y - yhat
@@ -940,11 +940,232 @@ mean(mod_csim[,3] > 1.1*mod_csim[,1])
 We have about 50/50 odds that adopting treatment 2 would increase mean yield by at least 10%.
 
 
+\newpage
+
+## MANOVA
+
+Let’s explore an example with two factors. We’ll use the Warpbreaks data set in R. Check the documentation for a description of the data by typing ?warpbreaks.
+
+```{r,echo=FALSE, comment=""}
+data("warpbreaks")
+?warpbreaks
+head(warpbreaks)
+```
+
+Again, we visualize the data with box plots.
+
+```{r,echo=FALSE, comment=""}
+table(warpbreaks$wool, warpbreaks$tension)
+
+boxplot(breaks ~ wool + tension, data=warpbreaks)
+
+```
+
+```{r,echo=FALSE, comment=""}
+boxplot(log(breaks) ~ wool + tension, data=warpbreaks)
+```
+
+The different groups have more similar variance if we use the logarithm of breaks. From this visualization, it looks like both factors may play a role in the number of breaks. It appears that there is a general decrease in breaks as we move from low to medium to high tension. Let’s start with a one-way model using tension only.
+
+### One-way model
+
+```{r, echo=FALSE,comment="", warning=FALSE,message=FALSE,fig.height=9, echo=FALSE}
+library("rjags")
+mod1_string = " model {
+    for( i in 1:length(y)) {
+        y[i] ~ dnorm(mu[tensGrp[i]], prec)
+    }
+    
+    for (j in 1:3) {
+        mu[j] ~ dnorm(0.0, 1.0/1.0e6)
+    }
+    
+    prec ~ dgamma(5/2.0, 5*2.0/2.0)
+    sig = sqrt(1.0 / prec)
+} "
+
+set.seed(83)
+str(warpbreaks)
+
+data1_jags = list(y=log(warpbreaks$breaks), tensGrp=as.numeric(warpbreaks$tension))
+
+params1 = c("mu", "sig")
+
+mod1 = jags.model(textConnection(mod1_string), data=data1_jags, n.chains=3)
+update(mod1, 1e3)
+
+mod1_sim = coda.samples(model=mod1,
+                        variable.names=params1,
+                        n.iter=5e3)
+
+## convergence diagnostics
+plot(mod1_sim)
+
+gelman.diag(mod1_sim)
+autocorr.diag(mod1_sim)
+effectiveSize(mod1_sim)
+```
+
+Here are the results.
+
+```{r, echo=FALSE,comment="", warning=FALSE,message=FALSE, echo=FALSE}
+summary(mod1_sim)
+```
+
+The 95% posterior interval for the mean of group 2 (medium tension) overlaps with both the low and high groups, but the low and high groups do not have overlapping intervals. That is a pretty strong indication that the means for low and high tension are different. Let’s collect the DIC for this model and move on to the two-way model.
+
+```{r, echo=FALSE,comment="", warning=FALSE,message=FALSE, echo=FALSE}
+dic1 = dic.samples(mod1, n.iter=1e3)
+```
+
+### Two-way additive model
+With two factors, one with two levels and the other with three, we have six treatment groups, which is the same situation we discussed when introducing multiple factor ANOVA. We will first fit the additive model which treats the two factors separately with no interaction. To get the XX matrix (or design matrix) for this model, we can extract it from a linear model in R.
+
+```{r, echo=FALSE,comment="", warning=FALSE,message=FALSE, echo=FALSE}
+X = model.matrix(lm(breaks ~ wool + tension, data=warpbreaks))
+head(X)
+```
 
 
+```{r, echo=FALSE,comment="", warning=FALSE,message=FALSE, echo=FALSE}
+tail(X)
+```
+
+By default, R has chosen the mean for wool A and low tension to be the intercept. Then, there is an effect for wool B, and effects for medium tension and high tension, each associated with dummy indicator variables.
+
+```{r, echo=FALSE,comment="", warning=FALSE,message=FALSE, echo=FALSE}
+mod2_string = " model {
+    for( i in 1:length(y)) {
+        y[i] ~ dnorm(mu[i], prec)
+        mu[i] = int + alpha*isWoolB[i] + beta[1]*isTensionM[i] + beta[2]*isTensionH[i]
+    }
+    
+    int ~ dnorm(0.0, 1.0/1.0e6)
+    alpha ~ dnorm(0.0, 1.0/1.0e6)
+    for (j in 1:2) {
+        beta[j] ~ dnorm(0.0, 1.0/1.0e6)
+    }
+    
+    prec ~ dgamma(3/2.0, 3*1.0/2.0)
+    sig = sqrt(1.0 / prec)
+} "
+
+data2_jags = list(y=log(warpbreaks$breaks), isWoolB=X[,"woolB"], isTensionM=X[,"tensionM"], isTensionH=X[,"tensionH"])
+
+params2 = c("int", "alpha", "beta", "sig")
+
+mod2 = jags.model(textConnection(mod2_string), data=data2_jags, n.chains=3)
+update(mod2, 1e3)
+
+mod2_sim = coda.samples(model=mod2,
+                        variable.names=params2,
+                        n.iter=5e3)
+
+## convergene diagnostics
+plot(mod2_sim)
+
+gelman.diag(mod1_sim)
+autocorr.diag(mod1_sim)
+effectiveSize(mod1_sim)
+```
+
+Let’s summarize the results, collect the DIC for this model, and compare it to the first one-way model.
+
+```{r, echo=FALSE,comment="", warning=FALSE,message=FALSE, echo=FALSE}
+summary(mod2_sim)
+(dic2 = dic.samples(mod2, n.iter=1e3))
+dic1
+```
+
+This suggests we haven’t gained much from adding the wool factor to the model. Before we discard wool, however, we should consider whether there is an interaction. Let’s look again at the box plot with all six treatment groups.
+
+```{r, echo=FALSE,comment="", warning=FALSE,message=FALSE, echo=FALSE}
+boxplot(log(breaks) ~ wool + tension, data=warpbreaks)
+```
+
+Our two-way model has a single effect for wool B and the estimate is negative. If this is true, then we would expect wool B to be associated with fewer breaks than its wool A counterpart on average. This is true for low and high tension, but it appears that breaks are higher for wool B when there is medium tension. That is, the effect for wool B is not consistent across tension levels, so it may appropriate to add an interaction term. In  R, this would look like:
+
+```{r, echo=FALSE,comment="", warning=FALSE,message=FALSE, echo=FALSE}
+lmod2 = lm(log(breaks) ~ .^2, data=warpbreaks)
+summary(lmod2)
+```
+
+Adding the interaction, we get an effect for being in wool B and medium tension, as well as for being in wool B and high tension. There are now six parameters for the mean, one for each treatment group, so this model is equivalent to the full cell means model. Let’s use that.
 
 
+### Two-way cell means model
 
+In this new model, $\mu$ will be a matrix with six entries, each corresponding to a treatment group.
+
+
+```{r, echo=FALSE,fig.height=9,comment="", warning=FALSE,message=FALSE, echo=FALSE}
+
+mod3_string = " model {
+    for( i in 1:length(y)) {
+        y[i] ~ dnorm(mu[woolGrp[i], tensGrp[i]], prec)
+    }
+    
+    for (j in 1:max(woolGrp)) {
+        for (k in 1:max(tensGrp)) {
+            mu[j,k] ~ dnorm(0.0, 1.0/1.0e6)
+        }
+    }
+    
+    prec ~ dgamma(3/2.0, 3*1.0/2.0)
+    sig = sqrt(1.0 / prec)
+} "
+
+str(warpbreaks)
+
+data3_jags = list(y=log(warpbreaks$breaks), woolGrp=as.numeric(warpbreaks$wool), tensGrp=as.numeric(warpbreaks$tension))
+
+params3 = c("mu", "sig")
+
+mod3 = jags.model(textConnection(mod3_string), data=data3_jags, n.chains=3)
+update(mod3, 1e3)
+
+mod3_sim = coda.samples(model=mod3,
+                        variable.names=params3,
+                        n.iter=5e3)
+mod3_csim = as.mcmc(do.call(rbind, mod3_sim))
+
+plot(mod3_sim, ask=TRUE)
+
+## convergence diagnostics
+gelman.diag(mod3_sim)
+autocorr.diag(mod3_sim)
+effectiveSize(mod3_sim)
+raftery.diag(mod3_sim)
+```
+
+Let’s compute the DIC and compare with our previous models.
+
+```{r, echo=FALSE, warning=FALSE,message=FALSE, echo=FALSE}
+(dic3 = dic.samples(mod3, n.iter=1e3))
+dic2
+dic1
+```
+
+This suggests that the full model with interaction between wool and tension is the best for explaining/predicting warp breaks.
+
+### Results
+
+```{r, echo=FALSE, warning=FALSE,message=FALSE, echo=FALSE}
+summary(mod3_sim)
+HPDinterval(mod3_csim)
+par(mfrow=c(3,2)) # arrange frame for plots
+densplot(mod3_csim[,1:6], xlim=c(2.0, 4.5))
+```
+
+It might be tempting to look at comparisons between each combination of treatments, but we warn that this could yield spurious results. When we discussed the statistical modeling cycle, we said it is best not to search your results for interesting hypotheses, because if there are many hypotheses, some will appear to show “effects” or “associations” simply due to chance. Results are most reliable when we determine a relatively small number of hypotheses we are interested in beforehand, collect the data, and statistically evaluate the evidence for them.
+
+One question we might be interested in with these data is finding the treatment combination that produces the fewest breaks. To calculate this, we can go through our posterior samples and for each sample, find out which group has the smallest mean. These counts help us determine the posterior probability that each of the treatment groups has the smallest mean.
+
+```{r, echo=FALSE, warning=FALSE,message=FALSE, echo=FALSE}
+prop.table( table( apply(mod3_csim[,1:6], 1, which.min) ) )
+```
+
+The evidence supports wool B with high tension as the treatment that produces the fewest breaks.
 
 \newpage
 
@@ -1195,7 +1416,7 @@ sd(resid2) # standard deviation of residuals
 
 These look much better, although the residuals for Saudi Arabia and Libya are still more than three standard deviations away from the mean of the residuals. We might consider adding the other covariate region, but instead let’s look at another option when we are faced with strong outliers.
 
-#### t likelihood
+**t likelihood**
 
 Let’s consider changing the likelihood. The normal likelihood has thin tails (almost all of the probability is concentrated within the first few standard deviations from the mean). This does not accommodate outliers well. Consequently, models with the normal likelihood might be overly-influenced by outliers. Recall that the tt distribution is similar to the normal distribution, but it has thicker tails which can accommodate outliers.
 
@@ -1247,14 +1468,435 @@ We add these two quantities to get the DIC (the last number). The better-fitting
 
 We encourage you to explore different model specifications and compare their fit to the data using DIC. Wikipedia provides a good introduction to DIC and we can find more details about the JAGS implementation through the rjags package documentation by entering ?dic.samples in the  R console.
 
+\newpage
+
+## Logistic regression
+
+
+For an example of logistic regression, we’ll use the urine data set from the boot package in R. The response variable is r, which takes on values of 0 or 1. We will remove some rows from the data set which contain missing values.
+
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE, comment=""}
+library("boot")
+data("urine")
+dat = na.omit(urine)
+head(urine)
+
+```
+
+Let’s look at pairwise scatter plots of the seven variables.
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE, comment=""}
+pairs(dat)
+```
+
+One thing that stands out is that several of these variables are strongly correlated with one another. For example gravity and osmo appear to have a very close linear relationship. Collinearity between xx variables in linear regression models can cause trouble for statistical inference. Two correlated variables will compete for the ability to predict the response variable, leading to unstable estimates. This is not a problem for prediction of the response, if prediction is the end goal of the model. But if our objective is to discover how the variables relate to the response, we should avoid collinearity.
+
+We can more formally estimate the correlation among these variables using the corrplot package.
+
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE, comment=""}
+library("corrplot")
+Cor = cor(dat)
+corrplot(Cor, type="upper", method="ellipse", tl.pos="d")
+corrplot(Cor, type="lower", method="number", col="black", 
+         add=TRUE, diag=FALSE, tl.pos="n", cl.pos="n")
+```
+
+### Variable selection
+One primary goal of this analysis is to find out which variables are related to the presence of calcium oxalate crystals. This objective is often called “variable selection.” We have already seen one way to do this: fit several models that include different sets of variables and see which one has the best DIC. Another way to do this is to use a linear model where the priors for the $\beta$ coefficients favor values near 0 (indicating a weak relationship). This way, the burden of establishing association lies with the data. If there is not a strong signal, we assume it doesn’t exist.
+
+Rather than tailoring a prior for each individual $\beta$ based on the scale its covariate takes values on, it is customary to subtract the mean and divide by the standard deviation for each variable.
+
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE, comment=""}
+X = scale(dat[,-1], center=TRUE, scale=TRUE)
+head(X[,"gravity"])
+
+```
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE, comment=""}
+colMeans(X)
+apply(X, 2, sd)
+```
+
+### Model
+Our prior for the $\beta$ (which we’ll call bb in the model) coefficients will be the double exponential (or Laplace) distribution, which as the name implies, is the exponential distribution with tails extending in the positive direction as well as the negative direction, with a sharp peak at 0. We can read more about it in the JAGS manual. The distribution looks like:
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE, comment=""}
+ddexp = function(x, mu, tau) {
+  0.5*tau*exp(-tau*abs(x-mu)) 
+}
+curve(ddexp(x, mu=0.0, tau=1.0), from=-5.0, to=5.0, ylab="density", main="Double exponential\ndistribution") # double exponential distribution
+curve(dnorm(x, mean=0.0, sd=1.0), from=-5.0, to=5.0, lty=2, add=TRUE) # normal distribution
+legend("topright", legend=c("double exponential", "normal"), lty=c(1,2), bty="n")
+```
+
+```{r,echo=FALSE,fig.height=9, warning=FALSE, message=FALSE, comment=""}
+library("rjags")
+mod1_string = " model {
+    for (i in 1:length(y)) {
+        y[i] ~ dbern(p[i])
+        logit(p[i]) = int + b[1]*gravity[i] + b[2]*ph[i] + b[3]*osmo[i] + b[4]*cond[i] + b[5]*urea[i] + b[6]*calc[i]
+    }
+    int ~ dnorm(0.0, 1.0/25.0)
+    for (j in 1:6) {
+        b[j] ~ ddexp(0.0, sqrt(2.0)) # has variance 1.0
+    }
+} "
+
+set.seed(92)
+head(X)
+
+data_jags = list(y=dat$r, gravity=X[,"gravity"], ph=X[,"ph"], osmo=X[,"osmo"], cond=X[,"cond"], urea=X[,"urea"], calc=X[,"calc"])
+
+params = c("int", "b")
+
+mod1 = jags.model(textConnection(mod1_string), data=data_jags, n.chains=3)
+update(mod1, 1e3)
+
+mod1_sim = coda.samples(model=mod1,
+                        variable.names=params,
+                        n.iter=5e3)
+mod1_csim = as.mcmc(do.call(rbind, mod1_sim))
+
+## convergence diagnostics
+plot(mod1_sim, ask=TRUE)
+
+gelman.diag(mod1_sim)
+autocorr.diag(mod1_sim)
+autocorr.plot(mod1_sim)
+effectiveSize(mod1_sim)
+
+## calculate DIC
+dic1 = dic.samples(mod1, n.iter=1e3)
+```
+
+Let’s look at the results.
+
+
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE, comment=""} 
+summary(mod1_sim)
+par(mfrow=c(3,2))
+densplot(mod1_csim[,1:6], xlim=c(-3.0, 3.0))
+```
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE, comment=""} 
+colnames(X) # variable names
+```
+
+It is clear that the coefficients for variables gravity, cond (conductivity), and calc (calcium concentration) are not 0. The posterior distribution for the coefficient of osmo (osmolarity) looks like the prior, and is almost centered on 0 still, so we’ll conclude that osmo is not a strong predictor of calcium oxalate crystals. The same goes for ph.
+
+urea (urea concentration) appears to be a borderline case. However, if we refer back to our correlations among the variables, we see that urea is highly correlated with gravity, so we opt to remove it.
+
+Our second model looks like this:
+
+```{r,echo=FALSE, warning=FALSE,fig.height=9, message=FALSE, comment=""} 
+mod2_string = " model {
+    for (i in 1:length(y)) {
+        y[i] ~ dbern(p[i])
+        logit(p[i]) = int + b[1]*gravity[i] + b[2]*cond[i] + b[3]*calc[i]
+    }
+    int ~ dnorm(0.0, 1.0/25.0)
+    for (j in 1:3) {
+        b[j] ~ dnorm(0.0, 1.0/25.0) # noninformative for logistic regression
+    }
+} "
+
+mod2 = jags.model(textConnection(mod2_string), data=data_jags, n.chains=3)
+update(mod2, 1e3)
+
+mod2_sim = coda.samples(model=mod2,
+                        variable.names=params,
+                        n.iter=5e3)
+mod2_csim = as.mcmc(do.call(rbind, mod2_sim))
+
+plot(mod2_sim, ask=TRUE)
+
+gelman.diag(mod2_sim)
+autocorr.diag(mod2_sim)
+autocorr.plot(mod2_sim)
+effectiveSize(mod2_sim)
+
+dic2 = dic.samples(mod2, n.iter=1e3)
+```
+
+### Results
+
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE, comment=""} 
+dic1
+dic2
+summary(mod2_sim)
+```
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE, comment=""} 
+HPDinterval(mod2_csim)
+```
+
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE, comment=""} 
+par(mfrow=c(3,1))
+densplot(mod2_csim[,1:3], xlim=c(-3.0, 3.0))
+colnames(X)[c(1,4,6)] # variable names
+```
+
+The DIC is actually better for the first model. Note that we did change the prior between models, and generally we should not use the DIC to choose between priors. Hence comparing DIC between these two models may not be a fair comparison. Nevertheless, they both yield essentially the same conclusions. Higher values of gravity and calc (calcium concentration) are associated with higher probabilities of calcium oxalate crystals, while higher values of cond (conductivity) are associated with lower probabilities of calcium oxalate crystals. There are more modeling options in this scenario, perhaps including transformations of variables, different priors, and interactions between the predictors, but we’ll leave it to you to see if you can improve the model.
+
+### Prediction from a logisic regression model
+
+How do we turn model parameter estimates into model predictions? The key is the form of the model. Remember that the likelihood is Bernoulli, which is 1 with probability pp. We modeled the logit of pp as a linear model, which we showed in the first segment of this lesson leads to an exponential form for E(y)=p(y)=p.
+
+Take the output from our model in the last segment. We will use the posterior means as point estimates of the parameters.
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE, comment=""} 
+(pm_coef = colMeans(mod2_csim))
+```
+
+The posterior mean of the intercept was about -0.15. Since we centered and scaled all of the covariates, values of 0 for each xx correspond to the average values. Therefore, if we use our last model, then our point estimate for the probability of calcium oxalate crystals when gravity,  cond, and calc are at their average values is 1/(1+e^{-(-0.15)})== 0.4625702.
+
+Now suppose we want to make a prediction for a new specimen whose value of gravity is average, whose value of cond is one standard deviation below the mean, and whose value of calc is one standard deviation above the mean. Our point estimate for the probability of calcium oxalate crystals is 1/(1+e^{-(-0.15 + 1.4*0.0 - 1.3*(-1.0) + 1.9*(1.0))})=  0.9547825.
+
+If we want to make predictions in terms of the original xx variable values, we have two options:
+
+1. For each x variable, subtract the mean and divide by the standard deviation for that variable in the original data set used to fit the model.
+
+2. Re-fit the model without centering and scaling the covariates.
+
+#### Predictive checks
+
+We can use the same ideas to make predictions for each of the original data points. This is similar to what we did to calculate residuals with earlier models.
+
+First we take the X matrix and matrix multiply it with the posterior means of the coefficients. Then we need to pass these linear values through the inverse of the link function as we did above.
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE, comment=""} 
+pm_Xb = pm_coef["int"] + X[,c(1,4,6)] %*% pm_coef[1:3]
+phat = 1.0 / (1.0 + exp(-pm_Xb))
+head(phat)
+```
+
+These phat values are the model’s predicted probability of calcium oxalate crystals for each data point. We can get a rough idea of how successful the model is by plotting these predicted values against the actual outcome.
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE, comment=""}
+plot(phat, jitter(dat$r))
+```
+
+Suppose we choose a cutoff for these predicted probabilities. If the model tells us the probability is higher than 0.5, we will classify the observation as a 1 and if it is less than 0.5, we will classify it as a 0. That way the model classifies each data point. Now we can tabulate these classifications against the truth to see how well the model predicts the original data.
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE, comment=""}
+(tab0.5 = table(phat > 0.5, data_jags$y))
+```
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE, comment=""}
+sum(diag(tab0.5)) / sum(tab0.5)
+```
+
+The correct classification rate is about 76%, not too bad, but not great.
+
+Now suppose that it is considered really bad to predict no calcium oxalate crystal when there in fact is one. We might then choose to lower our threshold for classifying data points as 1s. Say we change it to 0.3. That is, if the model says the probability is greater than 0.3, we will classify it as having a calcium oxalate crystal.
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE, comment=""}
+(tab0.3 = table(phat > 0.3, data_jags$y))
+sum(diag(tab0.3)) / sum(tab0.3)
+```
+
+It looks like we gave up a little classification accuracy, but we did indeed increase our chances of detecting a true positive.
+
+We could repeat this exercise for many thresholds between 0 and 1, and each time calculate our error rates. This is equivalent to calculating what is called the ROC (receiver-operating characteristic) curve, which is often used to evaluate classification techniques.
+
+These classification tables we have calculated were all in-sample. They were predicting for the same data used to fit the model. We could get a less biased assessment of how well our model performs if we calculated these tables for data that were not used to fit the model. For example, before fitting the model, you could withhold a set of randomly selected “test” data points, and use the model fit to the rest of the “training” data to make predictions on your “test” set.
+
+
 
 \newpage
 
 ## Poisson regression
+**Data**
+
+For an example of Poisson regression, we’ll use the badhealth data set from the COUNT package in R.
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE, comment=""}
+library("COUNT")
+data("badhealth")
+?badhealth
+head(badhealth)
+any(is.na(badhealth))
+```
+
+As usual, let’s visualize these data.
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE, comment=""}
+hist(badhealth$numvisit, breaks=20)
+```
+
+```{r}
+plot(jitter(log(numvisit)) ~ jitter(age), data=badhealth, subset=badh==0, xlab="age", ylab="log(visits)")
+points(jitter(log(numvisit)) ~ jitter(age), data=badhealth, subset=badh==1, col="red")
+```
+
+#### Model
+It appears that both age and bad health are related to the number of doctor visits. We should include model terms for both variables. If we believe the age/visits relationship is different between healthy and non-healthy populations, we should also include an interaction term. We will fit the full model here and leave it to you to compare it with the simpler additive model.
+
+```{r}
+library("rjags")
+mod_string = " model {
+    for (i in 1:length(numvisit)) {
+        numvisit[i] ~ dpois(lam[i])
+        log(lam[i]) = int + b_badh*badh[i] + b_age*age[i] + b_intx*age[i]*badh[i]
+    }
+    
+    int ~ dnorm(0.0, 1.0/1e6)
+    b_badh ~ dnorm(0.0, 1.0/1e4)
+    b_age ~ dnorm(0.0, 1.0/1e4)
+    b_intx ~ dnorm(0.0, 1.0/1e4)
+} "
+
+set.seed(102)
+
+data_jags = as.list(badhealth)
+
+params = c("int", "b_badh", "b_age", "b_intx")
+
+mod = jags.model(textConnection(mod_string), data=data_jags, n.chains=3)
+update(mod, 1e3)
+
+mod_sim = coda.samples(model=mod,
+                        variable.names=params,
+                        n.iter=5e3)
+mod_csim = as.mcmc(do.call(rbind, mod_sim))
+
+## convergence diagnostics
+plot(mod_sim)
+
+gelman.diag(mod_sim)
+autocorr.diag(mod_sim)
+autocorr.plot(mod_sim)
+effectiveSize(mod_sim)
+
+## compute DIC
+dic = dic.samples(mod, n.iter=1e3)
+```
+
+#### Model checking
+To get a general idea of the model’s performance, we can look at predicted values and residuals as usual. Don’t forget that we must apply the inverse of the link function to get predictions for $\lambda$.
+
+
+
+```{r}
+X = as.matrix(badhealth[,-1])
+X = cbind(X, with(badhealth, badh*age))
+head(X)
+```
+
+```{r}
+(pmed_coef = apply(mod_csim, 2, median))
+```
+
+```{r}
+llam_hat = pmed_coef["int"] + X %*% pmed_coef[c("b_badh", "b_age", "b_intx")]
+lam_hat = exp(llam_hat)
+
+hist(lam_hat)
+```
+
+
+```{r}
+resid = badhealth$numvisit - lam_hat
+plot(resid) # the data were ordered
+```
+
+
+```{r}
+plot(lam_hat, badhealth$numvisit)
+abline(0.0, 1.0)
+```
+
+It is not surprising that the variability increases for values predicted at higher values since the mean is also the variance in the Poisson distribution. However, observations predicted to have about two visits should have variance about two, and observations predicted to have about six visits should have variance about six.
+
+```{r}
+plot(lam_hat[which(badhealth$badh==0)], resid[which(badhealth$badh==0)], xlim=c(0, 8), ylab="residuals", xlab=expression(hat(lambda)), ylim=range(resid))
+points(lam_hat[which(badhealth$badh==1)], resid[which(badhealth$badh==1)], col="red")
+```
+
+
+```{r}
+var(resid[which(badhealth$badh==0)])
+```
+
+```{r}
+var(resid[which(badhealth$badh==1)])
+```
+
+Clearly this is not the case with these data. This indicates that either the model fits poorly (meaning the covariates don’t explain enough of the variability in the data), or the data are “overdispersed” for the Poisson likelihood we have chosen. This is a common issue with count data. If the data are more variable than the Poisson likelihood would suggest, a good alternative is the negative binomial distribution, which we will not pursue here.
+
+#### Results
+
+Assuming the model fit is adequate, we can interpret the results.
+
+
+```{r}
+summary(mod_sim)
+```
+
+The intercept is not necessarily interpretable here because it corresponds to a healthy 0-year-old, whereas the youngest person in the data set is 20 years old.
+
+For healthy individuals, it appears that age has a positive association with number of doctor visits. Clearly, bad health is associated with an increase in expected number of visits. The interaction coefficient is interpreted as an adjustment to the age coefficient for people in bad health. Hence, for people with bad health, age is essentially unassociated with number of visits.
+
+#### Predictive distributions
+Let’s say we have two people aged 35, one in good health and the other in poor health. What is the posterior probability that the individual with poor health will have more doctor visits? This goes beyond the posterior probabilities we have calculated comparing expected responses in previous lessons. Here we will create Monte Carlo samples for the responses themselves. This is done by taking the Monte Carlo samples of the model parameters, and for each of those, drawing a sample from the likelihood. Let’s walk through this.
+
+First, we need the xx values for each individual. We’ll say the healthy one is Person 1 and the unhealthy one is Person 2. Their xx values are
+
+```{r}
+x1 = c(0, 35, 0) # good health
+x2 = c(1, 35, 35) # bad health
+```
+
+The posterior samples of the model parameters are stored in mod_csim:
+
+```{r}
+head(mod_csim)
+```
+
+First, we’ll compute the linear part of the predictor:
+```{r}
+loglam1 = mod_csim[,"int"] + mod_csim[,c(2,1,3)] %*% x1
+loglam2 = mod_csim[,"int"] + mod_csim[,c(2,1,3)] %*% x2
+```
+
+Next we’ll apply the inverse link:
+
+```{r}
+lam1 = exp(loglam1)
+lam2 = exp(loglam2)
+```
+
+The final step is to use these samples for the $\lambda$ parameter for each individual and simulate actual number of doctor visits using the likelihood:
+
+```{r}
+(n_sim = length(lam1))
+```
+
+```{r}
+y1 = rpois(n=n_sim, lambda=lam1)
+y2 = rpois(n=n_sim, lambda=lam2)
+
+plot(table(factor(y1, levels=0:18))/n_sim, pch=2, ylab="posterior prob.", xlab="visits")
+points(table(y2+0.1)/n_sim, col="red")
+```
+
+Finally, we can answer the original question: What is the probability that the person with poor health will have more doctor visits than the person with good health?
+
+```{r}
+mean(y2 > y1)
+```
+
+Because we used our posterior samples for the model parameters in our simulation, this posterior predictive distribution on the number of visits for these two new individuals naturally takes into account our uncertainty in the model estimates. This is a more honest/realistic distribution than we would get if we had fixed the model parameters at their MLE or posterior means and simulated data for the new individuals.
 
 \newpage
 
-# Multi-level modeling
+# Multi-level models 
 
 \newpage
 
@@ -1270,7 +1912,8 @@ kable(head(dat,10), caption = "First 10 values" )
 ```
 
 ```{r,echo=F}
-table(dat$location)
+h<-   as.matrix(table(dat$location))
+kable(t(h),caption =  "number of cookies per location")
 ```
 
 We can also visualize the distribution of chips by location.
@@ -1337,11 +1980,15 @@ for (j in 1:max(location)) {
   lam[j] ~ dgamma(alpha, beta)
 }
 
-alpha = mu^2 / sig^2
-beta = mu / sig^2
+mu ~ dgamma(2.0, 1.0/5.0) ###Gamma mean = a/b
+sig ~ dexp(1.0)           ### Gamma sig = a/b^2 
 
-mu ~ dgamma(2.0, 1.0/5.0)
-sig ~ dexp(1.0)
+
+## we can solve the above to get 
+
+alpha = mu^2 / sig^2 
+beta = mu / sig^2   
+
 
 } "
 ```
@@ -1378,9 +2025,11 @@ dic = dic.samples(mod, n.iter=1e3)
 ```
 
 ### Model checking
+
 After assessing convergence, we can check the fit via residuals. With a hierarhcical model, there are now two levels of residuals: the observation level and the location mean level. To simplify, we’ll look at the residuals associated with the posterior means of the parameters.
 
 First, we have observation residuals, based on the estimates of location means.
+
 ```{r, comment=""}
 ## observation level residuals
 (pm_params = colMeans(mod_csim))
@@ -1499,11 +2148,6 @@ autocorr.plot(mod_sim)
 effectiveSize(mod_sim)
 ```
 
-
-
-
-
-
 \newpage
 
 
@@ -1511,5 +2155,121 @@ effectiveSize(mod_sim)
 
 \newpage
 
+
+# Prior Sensitivity Analysis
+
+When communicating results from any analysis, a responsible statistician will report and justify modeling decisions, especially assumptions. In a Bayesian analysis, there is another assumption that is open to scrutiny: the choices of prior distributions. In the models considered so far in this course, there are an infinite number of prior distributions we could have chosen from.
+
+How do you justify the priors you choose? If they truly represent your beliefs about the parameters before analysis and the model is appropriate, then the posterior distribution truly represents your updated beliefs. If you don’t have any strong beliefs beforehand, there are often default, reference, or noninformative prior options, and you will have to select one. However, a collaborator or a boss (indeed, somebody somewhere) may not agree with your choice of prior. One way to increase the credibility of your results is to repeat the analysis under a variety of priors, and report how the results differ as a result. This process is called prior sensitivity analyis.
+
+At a minimum you should always report your choice of model and prior. If you include a sensitivity analysis, select one or more alternative priors and describe how the results of the analysis change. If they are sensitive to the choice of prior, you will likely have to explain both sets of results, or at least explain why you favor one prior over another. If the results are not sensitive to the choice of prior, this is evidence that the data are strongly driving the results. It suggests that different investigators coming from different backgrounds should come to the same conclusions.
+
+If the purpose of your analysis is to establish a hypothesis, it is often prudent to include a ``skeptical" prior which does not favor the hypothesis. Then, if the posterior distribution still favors the hypothesis despite the unfavorable prior, you will be able to say that the data substantially favor the hypothesis. This is the approach we will take in the following example, continued from the previous lesson.
+
+## Example
+
+Let’s return to the example of number of doctor visits (Poisson regression). We concluded from our previous analysis of these data that both bad health and increased age are associated with more visits. Suppose the burden of proof that bad health is actually associated with more visits rests with us, and we need to convince a skeptic.
+
+First, let’s re-run the original analysis and remind ourselves of the posterior distribution for the badh (bad health) indicator.
+
+```{r}
+library("COUNT")
+library("rjags")
+```
+
+
+```{r}
+data("badhealth")
+
+mod_string = " model {
+    for (i in 1:length(numvisit)) {
+        numvisit[i] ~ dpois(lam[i])
+        log(lam[i]) = int + b_badh*badh[i] + b_age*age[i] + b_intx*age[i]*badh[i]
+    }
+    
+    int ~ dnorm(0.0, 1.0/1e6)
+    b_badh ~ dnorm(0.0, 1.0/1e4)
+    b_age ~ dnorm(0.0, 1.0/1e4)
+    b_intx ~ dnorm(0.0, 1.0/1e4)
+} "
+
+set.seed(102)
+
+data_jags = as.list(badhealth)
+
+params = c("int", "b_badh", "b_age", "b_intx")
+
+mod = jags.model(textConnection(mod_string), data=data_jags, n.chains=3)
+update(mod, 1e3)
+
+mod_sim = coda.samples(model=mod,
+                        variable.names=params,
+                        n.iter=5e3)
+mod_csim = as.mcmc(do.call(rbind, mod_sim))
+plot(density(mod_csim[,"b_badh"]), main = "Density plot for bad health coefficient" )
+```
+
+Essentially all of the posterior probability mass is above 0, suggesting that this coefficient is positive (and consequently that bad health is associated with more visits). We obtained this result using a relatively noninformative prior. What if we use a prior that strongly favors values near 0? Let’s repeat the analysis with a normal prior on the badh coefficient that has mean 0 and standard deviation 0.2, so that the prior probability that the coefficient is less than 0.6 is >0.998>0.998. We’ll also use a small variance on the prior for the interaction term involving badh (standard deviation 0.01 because this coefficient is on a much smaller scale).
+
+
+
+```{r}
+mod2_string = " model {
+    for (i in 1:length(numvisit)) {
+        numvisit[i] ~ dpois(lam[i])
+        log(lam[i]) = int + b_badh*badh[i] + b_age*age[i] + b_intx*age[i]*badh[i]
+    }
+    
+    int ~ dnorm(0.0, 1.0/1e6)
+    b_badh ~ dnorm(0.0, 1.0/0.2^2)
+    b_age ~ dnorm(0.0, 1.0/1e4)
+    b_intx ~ dnorm(0.0, 1.0/0.01^2)
+} "
+
+mod2 = jags.model(textConnection(mod2_string), data=data_jags, n.chains=3)
+update(mod2, 1e3)
+
+mod2_sim = coda.samples(model=mod2,
+                        variable.names=params,
+                        n.iter=5e3)
+mod2_csim = as.mcmc(do.call(rbind, mod2_sim))
+```
+
+How did the posterior distribution for the coefficient of badh change?
+
+```{r}
+curve(dnorm(x, mean=0.0, sd=sqrt(1e4)), from=-3.0, to=3.0, ylim=c(0.0, 3.0), lty=2,
+      main="b_badh", ylab="density", xlab="b_badh")
+curve(dnorm(x, mean=0.0, sd=0.2), from=-3.0, to=3.0, col="red", lty=2, add=TRUE)
+lines(density(mod_csim[,"b_badh"]))
+lines(density(mod2_csim[,"b_badh"]), col="red")
+legend("topleft", legend=c("noninformative prior", "posterior", "skeptical prior", "posterior"),
+       lty=c(2,1,2,1), col=rep(c("black", "red"), each=2), bty="n")
+```
+
+Under the skeptical prior, our posterior distribution for b_badh has significantly dropped to between about 0.6 and 1.1. Although the strong prior influenced our inference on the magnitude of the bad health effect on visits, it did not change the fact that the coefficient is significantly above 0. In other words: even under the skeptical prior, bad health is associated with more visits, with posterior probability near 1.
+
+We should also check the effect of our skeptical prior on the interaction term involving both age and health.
+
+
+```{r}
+curve(dnorm(x, mean=0.0, sd=sqrt(1e4)), from=-0.05, to=0.05, ylim=c(0.0, 140.0), lty=2,
+      main="b_intx", ylab="density", xlab="b_intx")
+curve(dnorm(x, mean=0.0, sd=0.01), from=-0.05, to=0.05, col="red", lty=2, add=TRUE)
+lines(density(mod_csim[,"b_intx"]))
+lines(density(mod2_csim[,"b_intx"]), col="red")
+legend("topleft", legend=c("noninformative prior", "posterior", "skeptical prior", "posterior"),
+       lty=c(2,1,2,1), col=rep(c("black", "red"), each=2), bty="n")
+```
+
+```{r}
+mean(mod2_csim[,"b_intx"] > 0) # posterior probability that b_intx is positive
+```
+
+The result here is interesting. Our estimate for the interaction coefficient has gone from negative under the noninformative prior to positive under the skeptical prior, so the result is sensitive. In this case, because the skeptical prior shrinks away much of the bad health main effect, it is likely that this interaction effect attempts to restore some of the positive effect of bad health on visits. Thus, despite some observed prior sensitivity, our conclusion that bad health positively associates with more visits remains unchanged.
+
+
+
+\newpage
 
 # Bibliography
