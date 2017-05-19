@@ -2029,7 +2029,6 @@ dic = dic.samples(mod, n.iter=1e3)
 After assessing convergence, we can check the fit via residuals. With a hierarhcical model, there are now two levels of residuals: the observation level and the location mean level. To simplify, we’ll look at the residuals associated with the posterior means of the parameters.
 
 First, we have observation residuals, based on the estimates of location means.
-
 ```{r, comment=""}
 ## observation level residuals
 (pm_params = colMeans(mod_csim))
