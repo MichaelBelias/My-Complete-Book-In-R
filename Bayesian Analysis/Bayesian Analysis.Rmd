@@ -1470,7 +1470,33 @@ We encourage you to explore different model specifications and compare their fit
 
 \newpage
 
-## Logistic regression
+# Linear Regression 2nd example
+
+New York City Crime Data
+
+As an example of a Bayesian linear regression model, we look at New York City crime data from 1966 to 1967. The outcome variable (THEFT) is the increase or decrease in the seasonally adjusted rate of grand larcenies in 23 Manhattan police precincts from a 27-week pre-intervention period compared to a 58-week intervention period. The predictor variables are the percent increase or decrease in the number of police officers in a precinct (MAN), and whether the precinct was located uptown, midtown or downtown.
+
+We specify the model as:
+
+
+$$THEFT_i \sim N(\mu, \sigma^) \\
+\mu = \beta_0 + \beta_1 * MAN + district \\
+\frac{1}{\sigma^2} \sim \Gamma(0.001, 0.001) \\
+\beta_0 \sim N(0, 100000) \\
+\beta_1 \sim N(0, 100000)$$
+
+We will need a prior for the effect of geographic area (district), but will discuss that in a moment. First, we consider how best to code an indicator variable in BUGS. There are two possible approaches. We can create a “design matrix” of dummy variables. In this approach we create two variables named DIST1 and DIST2, for which downtown precincts are coded 0,0 , midtown precincts are coded 1,0 and uptown precincts are coded 0,1. The BUGS code for this model would then be:
+
+
+
+
+
+\newpage
+
+
+
+
+# Logistic regression
 
 
 For an example of logistic regression, we’ll use the urine data set from the boot package in R. The response variable is r, which takes on values of 0 or 1. We will remove some rows from the data set which contain missing values.

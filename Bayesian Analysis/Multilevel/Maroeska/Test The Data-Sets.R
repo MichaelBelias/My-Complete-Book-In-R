@@ -233,3 +233,55 @@ fit= glm(formula = OUTCOME~TREAT,
 
 exp(-coef(fit))
 
+
+### Pain at 3–7 days
+### Pain at 3–7 days 2x2 Matrix Age<2
+
+a=matrix(c(table(IPDMA[which(IPDMA$AGE<2 & IPDMA$PAIN_2==0),]$TREAT),table(IPDMA[which(IPDMA$AGE<2 & IPDMA$PAIN_2==1),]$TREAT)),
+         nrow=2,ncol=2, dimnames = list(c("Control","Treatment"),c("No-Event","Event")))
+a=cbind(a,apply(a,1,sum));colnames(a)[3]="Total"
+a=rbind(a,apply(a,2,sum));row.names(a)[3]="Total"
+
+
+dat=escalc("RR",  ai=a[1,1], bi= a[1,2], ci= a[2,1], di= a[2,2])
+
+exp(summary(dat))
+
+fit= glm(formula = OUTCOME~TREAT, data= IPDMA[which(IPDMA$AGE<2),],
+         family = poisson)
+
+exp(-coef(fit))
+
+### Pain at 3–7 days 2x2 Matrix Age>=2
+
+a=matrix(c(table(IPDMA[which(IPDMA$AGE>=2 & IPDMA$POUTCOME==0),]$TREAT),
+           table(IPDMA[which(IPDMA$AGE>=2 & IPDMA$POUTCOME==1),]$TREAT)),
+         nrow=2,ncol=2, dimnames = list(c("Control","Treatment"),
+                                        c("No-Event","Event")))
+a=cbind(a,apply(a,1,sum));colnames(a)[3]="Total"
+
+a=rbind(a,apply(a,2,sum));row.names(a)[3]="Total"
+
+
+dat=escalc("RR",  ai=a[1,1], bi= a[1,2], ci= a[2,1], di= a[2,2])
+
+exp(summary(dat))
+
+fit= glm(formula = OUTCOME~TREAT, data= IPDMA[which(IPDMA$AGE>=2),],
+         family = binomial("log"))
+
+exp(-coef(fit))
+summary(fit)
+
+
+### Pain at 3–7 days 2x2 Matrix Age Interaction
+
+fit= glm(formula = OUTCOME~TREAT*AGED , data= IPDMA,
+         family = binomial)
+
+summary(fit)
+exp(-coef(fit))
+
+
+
+
