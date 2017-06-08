@@ -1,0 +1,17 @@
+# Dugongs model with residuals and predictive P-values
+model {
+for (i in 1:N){
+  Y[i] ~ dnorm(mu[i], tau)
+  mu[i] <- alpha - beta * pow(gamma, x[i])
+  res[i] <- (Y[i] - mu[i]) / sigma    # standardised residuals
+  P.res[i] <- phi(res[i])    # p-value for res
+  Y.pred[i] ~ dnorm(mu[i], tau)    # predicted response for dugong i
+  P.pred[i]  <-  step(Y[i] - Y.pred[i])    # indicator of whether observed > predicted
+                                                      # (posterior mean on P.pred = bayesian p-value)
+}
+alpha ~ dunif(0, 100)
+beta   ~ dunif(0, 100)
+gamma ~ dunif(0, 1.0)
+tau ~ dgamma(0.001, 0.001)
+sigma <- 1/sqrt(tau)
+}

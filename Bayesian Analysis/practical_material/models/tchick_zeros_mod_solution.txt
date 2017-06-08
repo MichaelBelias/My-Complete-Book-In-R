@@ -1,0 +1,15 @@
+model {
+ for (i in 1:6) {
+  z[i] <- 0 
+  z[i] ~ dpois(phi[i])
+  phi[i] <- -logL[i] + C
+  logL[i] <- -log(sig) -
+             0.5*tau*(y[i] - mu)*(y[i] - mu) -
+             log(phi((U - mu)/sig))
+ }
+ mu ~ dunif(0, 10) 
+ tau <- 1/(sig*sig)
+  sig <- 1
+  U <- 8
+  C <- 1000
+}

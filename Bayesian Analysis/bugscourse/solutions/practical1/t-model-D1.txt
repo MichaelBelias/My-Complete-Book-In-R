@@ -1,0 +1,5 @@
+#  Standard t distribution with 4 degrees of freedom
+
+model {
+y ~ dt(0, 1, 4)
+}

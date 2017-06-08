@@ -1,0 +1,33 @@
+OpenBUGS version 3.2.3 rev 1012
+model is syntactically correct
+data loaded
+model compiled
+model is initialized
+model is already initialized
+1000 updates took 0 s
+monitor set
+monitor set
+monitor set
+monitor set
+monitor set
+monitor set
+monitor set
+monitor set
+deviance set
+19000 updates took 5 s
+CODA files written
+Summary statistics
+		mean	sd	val2.5pc	median	val97.5pc	sample
+	beta	0.6296	0.3903	-0.1141	0.6248	1.401	19000
+	deviance	443.7	3.587	438.6	443.1	452.3	19000
+	or.beta	2.027	0.8315	0.8935	1.867	4.063	19000
+	phi[1,1]	0.2609	0.06448	0.1455	0.2574	0.3978	19000
+	phi[1,2]	0.2227	0.09563	0.06939	0.2118	0.4326	19000
+	phi[2,1]	0.4996	0.08452	0.3349	0.5001	0.6631	19000
+	phi[2,2]	0.7596	0.08328	0.5794	0.7665	0.9019	19000
+Deviance information
+	Dbar	Dhat	DIC	pD	
+d	146.4	144.4	148.3	1.982
+x	137.2	133.6	140.8	3.606
+z	160.2	159.2	161.2	0.9721
+total	443.7	437.2	450.3	6.56

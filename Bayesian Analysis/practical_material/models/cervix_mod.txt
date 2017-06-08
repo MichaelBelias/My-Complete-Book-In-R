@@ -1,0 +1,19 @@
+model {
+  for (i in 1:n) {
+    d[i]         ~ dbern(p[i])
+    logit(p[i]) <- beta0 + beta*z[i]
+    z[i]         ~ dbern(psi)
+    x[i]   ~ dbern(phi[z1[i], d1[i]])
+    z1[i]       <- z[i] + 1
+    d1[i]       <- d[i] + 1
+  }
+  for (j in 1:2) {
+    for (k in 1:2) {
+      phi[j, k]  ~ dunif(0, 1)
+    }
+  }
+  psi            ~ dunif(0, 1)
+  beta0          ~ dlogis(0, 1) 
+  beta           ~ dt(0, 0.16, 1) # Cauchy with scale 2.5 (Gelman 2008)
+  or.beta        <- exp(beta)
+}

@@ -1,0 +1,26 @@
+model {
+for (i in 1:Nobs) {
+  thm[i] ~ dnorm(theta[zone[i]], tau[zone[i]])    # likelihood for observed data
+}
+for (z in 1:Nzone) {
+  theta[z] ~ dnorm(mu, omega)    # zone-specific means (random effects)
+  log.sigma2[z] ~ dnorm(nu, chi)    # zone-specific log variances (random effects)
+  tau[z] <- 1/sigma2[z]
+  sigma2[z] <- exp(log.sigma2[z])
+}
+
+# priors on random effects mean and SD
+mu ~ dnorm(0, 0.000001)
+# random effects SD (between-zone SD of mean THM)
+psi ~ dunif(0, 1000)
+psi2 <- pow(psi, 2)
+omega <- 1 / psi2
+
+nu ~ dunif(-100, 100)    # mean log variance
+mean.var <- exp(nu)    # mean residual error variance
+phi ~ dunif(0, 1000)
+phi2 <- pow(phi, 2) # between-zone variance in log error variance
+chi <- 1 / phi2
+
+vpc <- psi2 / (psi2 + mean.var)    # average variance partition coefficient
+}

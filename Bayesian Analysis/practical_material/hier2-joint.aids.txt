@@ -1,0 +1,49 @@
+model {
+  for (i in 1:I){
+    for (j in 1:J){
+      CD4[i, j] ~ dnorm(CD4.mu[i, j], CD4.sigma.prec)
+      CD4.mu[i, j] <- beta[i, 1] +
+                      beta[i, 2] * t.obs[j] +
+                      beta3 * t.obs[j] * drug.ddI[i]
+    }
+
+    surv.time[i] ~ dweib(1, surv.mu[i])I(surv.c[i], )
+    log(surv.mu[i]) <- beta4 +
+                       beta5 * drug.ddI[i] +
+                       r1 * beta[i, 1] +
+                       r2 * beta[i, 2]
+
+    beta[i, 1:2] ~ dmnorm(beta.mu[], beta.sigma.prec[,])
+  }
+
+  for (k in 1:K){
+    for (l in 1:L){
+      CD4.pred[k, l] ~ dnorm(CD4.pred.mu[k, l], CD4.sigma.prec)
+
+      CD4.pred.mu[k, l] <- beta.pred[k, 1] +
+                           beta.pred[k, 2] * t.pred[l] +
+                           beta3 * t.pred[l] * drug.ddI.pred[k]
+    }
+    beta.pred[k, 1:2] ~ dmnorm(beta.mu[], beta.sigma.prec[,])
+  }
+
+  # priors
+  beta.mu[1] ~ dnorm(0, 0.0001)
+  beta.mu[2] ~ dnorm(0, 0.0001)
+  beta.sigma.prec[1:2, 1:2] ~ dwish(R[,], d)
+  beta.sigma.cov[1:2, 1:2] <- inverse(beta.sigma.prec[,])
+  d <- 2
+  R[1, 1] <- 1
+  R[2, 1] <- 0
+  R[1, 2] <- 0
+  R[2, 2] <- 1
+
+  beta3 ~ dnorm(0, 0.0001)
+  beta4 ~ dnorm(0, 0.0001)
+  beta5 ~ dnorm(0, 0.0001)
+  CD4.sigma.prec <- 1/pow(CD4.sigma.sd, 2)
+  CD4.sigma.sd ~ dunif(0, 100)
+
+  r1 ~ dnorm(0, 0.0001)
+  r2 ~ dnorm(0, 0.0001)
+}

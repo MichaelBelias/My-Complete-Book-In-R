@@ -1,0 +1,8 @@
+model {
+ for (i in 1:9) {
+  y[i] ~ dnorm(mu, tau)I(low[i],upp[i])
+ }
+ mu ~ dunif(0, 20)
+ tau <- 1 / (sig*sig)
+ sig ~ dunif(0, 1000)
+}

@@ -1,0 +1,13 @@
+model {
+ for (i in 1:6) {
+  y[i] ~ dnorm(mu, 1)
+ }
+ for (i in 1:3){
+  z[i] <- 0
+  z[i] ~ dpois(phi[i])
+  phi[i] <- -logL[i] + 1000
+  logL[i] <- log(1 - phi(8 - mu))
+ }
+ ypred ~ dnorm(mu, 1)T(8,)
+ mu ~ dunif(0, 20) 
+}

@@ -1,0 +1,6 @@
+#  Cube of normal random variable with mean 1, standard deviation 2
+
+model {
+y ~ dnorm(1, 0.25)
+ycubed <- pow(y, 3)
+}

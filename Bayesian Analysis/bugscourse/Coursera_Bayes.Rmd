@@ -1,0 +1,256 @@
+---
+title: "Coursera_Bayesian"
+author: "Michael Belias"
+date: "June 3, 2017"
+output: pdf_document
+---
+
+
+For the peer-graded assignment we will use a multi-level model, such as a meta-analysis.We gathered 10 studies in which patients were treated with intravenous immunoglobin to prevent infections held in hospital.
+
+```{r global_options, include=FALSE }
+knitr::opts_chunk$set(fig.width=12, fig.height=8,
+                      echo=FALSE, warning=FALSE, message=FALSE,comment = "")
+```
+
+
+```{r,echo=FALSE, message=FALSE}
+
+# control data is in the first column, treatment in the second
+sepsis.data <- list(
+  Ns = 10,
+  y = matrix(c(23, 8, 5, 14, 209, 5, 13, 13, 8, 39, 20, 2, 0, 8, 186, 4,
+               10, 19, 3, 40),
+               nrow = 10,
+               ncol = 2),
+  n = matrix(c(65, 43, 59, 32, 1212, 50, 34, 41, 40, 381, 61, 43, 56, 34,
+               1204, 100, 68, 40, 40, 372),
+               nrow = 10,
+               ncol = 2)
+)
+
+sepsis = data.frame(row.names = c("Bussel",
+                                  "Chirico",
+                                  "Clapp",
+                                  "Conway",
+                                  "Fanaroff",
+                                  "Haque",
+                                  "Ratrisawadi",
+                                  "Sandberg",
+                                  "Tanzer",
+                                  "Weisman"))
+sepsis$Country = c("USA","Italy","USA","UK","USA","Saudi Arabia","Thailand","Sweden","Turkey","USA")
+sepsis$Treat.Events=sepsis.data$y[,2]
+sepsis$Treat.Total=sepsis.data$n[,2]
+sepsis$Control.Events=sepsis.data$y[,1]
+sepsis$Control.Total=sepsis.data$n[,1]
+
+library(rjags)
+library(knitr)
+library(metafor)
+
+```
+
+
+### Understand the problem 
+
+We are trying to answer the question 'does the administration of intravenous immunoglobin (IVIG) prevent infections compared to placebo?'. 
+
+### Plan and properly collect relevant data
+
+*Justify why the data chosen provide insight to answering your question*
+*Describe how the data were collected*
+In order to answer the abovemetioned question we conducted a systematic review studies that estimated the proportion of patients that had a sepsis event with and without IVIG treatment. 
+
+
+*Describe any challenges relating to data acquisition/preparation (such as missing values, errors, etc.)*
+
+A meta-analysis is a powerful statistical tool because it has more power than a single trial and helps us check for other study-level characteristics that may influence our results.The challenge lies in the fact that these results are driven from a multi-level model, meaning that participants may be within study correlated and not completely independent.
+
+
+### Explore data
+
+*Graphically explore the data using plots that could potentially reveal insight relating to your question*
+
+The data consist of 5 columns indicating the 'Country' that the study was conducted, two columns represent the number of patients allocated in Treatment or Control and two the sepsis events that occured in each arm.
+
+```{r}
+kable(sepsis)
+dat= escalc("OR", ai= sepsis$Treat.Events , bi =  sepsis$Treat.Total-sepsis$Treat.Events , 
+            ci = sepsis$Control.Events, di = sepsis$Control.Total-sepsis$Control.Events)
+
+res= rma(data = dat, yi=yi,vi=vi, method = "DL")
+a=forest(res, transf = exp, showweights = T,slab = rownames(sepsis), refline = 1, ylim = c(-4,length(dat[,1])+3) )
+text(a$xlim[1],a$ylim[2]-1, "Study",    pos=4)
+text(a$xlim[2],a$ylim[2]-1, "Weights  / Incidence (C.I.)", cex = 0.75,    pos=2)
+text(a$xlim[1],a$ylim[1]+2, paste("Overall Q=",round(res$QE,3),"p-val=",round(res$QEp,3)),  cex=0.75,    pos=4)+
+text(a$xlim[1],a$ylim[1]+1,  paste("Overall tau=",round(res$tau2,4)),  cex=0.75,    pos=4)
+
+res.f <- rma(data = dat, yi=yi,vi=vi, method = "FE")
+
+### add summary polygons for the three subgroups
+addpoly(res.f, row=-4,cex=0.75, mlab="Fixed-Effects Model", col = "red", transf = exp)
+
+```
+
+Forest plots are a useful tool for investigating the between studies heterogeneity. In our case there is an increased level indicated by the Q and its corresponding p-value. Also is we fit a random and a fixed effects model we see great difference, probably due to the Sandberg trial.
+
+
+### Postulate a model
+
+*Justify why the model you chose is appropriate for the type of data you have*
+
+We wish to fit both types of meta-analysis models using odds ratio as effect size.
+So the distibutions of the variables are:
+
+* $y_{sT}$ ~ $Bin(n_{sT},p_{sT})$ the per study *s* number of events on treatment arm
+
+    + $n_{sT}$ number of patients per study on treatment group
+    + $p_{sT}$ number of events per study on treatment group
+  
+* $y_{sC}$ ~ $Bin(n_{sC} ,p_{sC})$ the per study *s* number of events on control arm 
+
+    + $n_{sC}$ number of patients per study on control group
+    + $p_{sC}$ number of events per study on control group
+  
+
+We will try to estimate the difference in the effects between the two arms. Odds are calculated in log-scale using the logit transformation so we will have a base effect in the control group  plus a extra effect on the treatment.
+
+*Describe how the model is well suited to answer your question*
+
+we will assess the invervention effect by two methods a fixed and a random-effects approach.
+This way we will have the pooled estimate of the intervention effect.
+
+*Write the full hierarchical specification of the model*
+
+For the Fixed-effects model we are setting the following:
+* $logit(p_{sC}) = a_s$
+* $logit(p_{sT}) = a_s + \delta$, where $a_s$ is the study-specific baselines
+
+
+For the random-effects model we are setting the following:
+* $logit(p_{sC}) = a_s$
+* $logit(p_{sT}) = a_s + \mu_s$, where
+    + $a_s$ is the study-specific baselines
+    + $\mu_s$ ~ $N(\delta, \tau^2)$, instead of a common effect used before
+    + $\delta$ is the overall log odds ratio treatment effect
+    + $\tau^2$ the precision
+    
+*Justify your choice of prior distributions*
+
+Odds ratios are approximatly normally distributed using the logit transformation, so this is the appropriate simulation techinique. In the fixed effect model we have a common effect so there a common parameter to be estimated, whereas in the random-effect a common assumption is that the trial estimates are driven from a normal distributio with a mean $\mu$ and $\sigma^2$ SD (JAGS uses precision $\tau = 1/ \sigma^2$). 
+
+
+### Fit the model
+
+
+First, we will try the fixed - effects approach described above.
+
+```{r}
+sepsis.fe.model <- "
+model
+{
+  for (s in 1:Ns){ # for each study, Ns = total number of studies
+    for (a in 1:2){ # for each arm
+      y[s, a] ~ dbin(p[s, a], n[s, a])
+      # Now only have a single delta
+      logit(p[s, a]) <- alpha[s] + delta[a]
+    }
+
+    ## study-specific baselines, vague priors
+    alpha[s] ~ dnorm(0, 0.01)
+  }
+
+  delta[1] <- 0
+  delta[2] ~ dnorm(0, 0.01)
+  delta.or <- exp(delta[2])
+
+  prec.mu <- 1/(sd.mu * sd.mu)
+  sd.mu ~ dunif(0, 10)
+}
+"
+variable.names <- c("p", "alpha", "delta", "delta.or")
+ini <- list(list(delta = c(NA, 0), alpha = rep(0, 10)))
+
+sepsis.fe.jag <- jags.model(textConnection(sepsis.fe.model),
+                            data = sepsis.data,
+                            inits = ini,
+                            n.chains = 1)
+update(sepsis.fe.jag, n.iter = 1000)
+sepsis.fe.coda <- coda.samples(model = sepsis.fe.jag,
+                               variable.names = variable.names,
+                               n.iter = 10000)
+
+summary(sepsis.fe.coda[, c("delta[2]", "delta.or")])
+sepsis.deltas=sepsis.fe.coda[, c("delta[2]", "delta.or")]
+```
+
+Afterwards we will try the random - effects approach described above.
+
+```{r}
+sepsis.re.model <- "
+model
+{
+  for (s in 1:Ns){ # for each study, Ns = total number of studies
+    for (a in 1:2){ # for each arm
+      y[s, a] ~ dbin(p[s, a], n[s, a])
+      logit(p[s, a]) <- alpha[s] + mu[s, a]
+    }
+
+    # treatment effect
+    mu[s, 1] <- 0
+    mu[s, 2] ~ dnorm(delta, prec.mu)
+
+    ## study-specific baselines, vague priors
+    alpha[s] ~ dnorm(0, 0.01)
+  }
+
+  delta ~ dnorm(0, 0.01)
+  # Add the following line to get odds ratios rather than log odds ratios
+  delta.or <- exp(delta)
+
+  prec.mu <- 1/(sd.mu * sd.mu)
+  sd.mu ~ dunif(0, 10)
+}
+"
+
+ini <- list(list(delta = 0, alpha = rep(0, 10)))
+
+sepsis.re.jag <- jags.model(textConnection(sepsis.re.model),
+                            data = sepsis.data,
+                            inits = ini,
+                            n.chains = 1)
+update(sepsis.re.jag, n.iter = 1000)
+sepsis.re.coda <- coda.samples(model = sepsis.re.jag,
+                               variable.names = c("p", "alpha", "mu", "delta","delta.or"),
+                               n.iter = 50000)
+
+summary(sepsis.re.coda[, c("delta", "delta.or")])
+
+sepsis.re.deltas = sepsis.re.coda[, c("delta", "delta.or")]
+
+```
+
+### Check the model
+
+
+```{r}
+sepsis.fe.coda.cum = as.mcmc(do.call(rbind, sepsis.deltas))
+
+## convergence diagnostics
+plot(sepsis.fe.coda.cum, ask=TRUE)
+
+
+sepsis.re.coda.cum = as.mcmc(do.call(rbind, sepsis.re.deltas))
+
+## convergence diagnostics
+plot(sepsis.re.coda.cum, ask=TRUE)
+```
+
+The fixed effects 95% posterior CI for the log odds ratio, delta, is (-0.38, -0.033), random effects 95% posterior CI for the log odds ratio, delta, is (-1.35, -0.01),suggesting that IVIG is reducing the chances of in-hospital infection. The difference in the results lies due to the lack of shrinkage in the fixed effects model e.g. the Sandberg (2000) study is not shrunk down towards the mean. 
+
+
+*Decide if your model is adequate. Postulate and fit at least one alternative model and assess which is best for answering your question. If neither is adequate, report that and move on*  (I have already fitted a second model)
+
+
+The Random effects model is performing better by shrinking the estimates to the mean. 

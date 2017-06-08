@@ -1,0 +1,19 @@
+model{
+ for (j in 1:3) {
+   y[j]         ~ dbin(p[j], n[j])
+   logit(p[j]) <- theta[1] + theta[2]*z[j]
+   z[j]         ~ dnorm(mu[j], prec)
+   mu[j]       <- alpha + beta*x[j]
+ }
+ for (j in 1:ncal) {
+   zcal[j] ~ dnorm(mucal[j], prec)
+   mucal[j] <- alpha + beta*xcal[j]
+ }
+ theta[1]       ~ dlogis(0, 1)
+ theta[2]       ~ dnorm(0, 0.2)
+ or10 <- exp(theta[2]*10)
+ alpha ~ dnorm(0, 0.001)
+ beta ~ dnorm(0, 0.001)
+ sig ~ dunif(0, 100)
+ prec <- 1/(sig*sig)
+}

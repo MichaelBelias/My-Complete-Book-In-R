@@ -1,0 +1,32 @@
+model {
+ for (i in 1:n) {
+  y[i] ~ dweib(nu, lambda)I(c[i], )
+ } 
+
+
+### SILLY PRIORS
+
+## lambda: precision of 0.0001 = SD 100: so 95% prior credible interval for mean = 1/lambda is
+## (exp(-200), exp(200)), which gives prior probability of about of 0.5 to implausible values for mean survival time for humans.
+
+# lambda <- exp(loglambda)
+# loglambda ~ dnorm(0, 0.0001)
+
+## Similarly for nu, prior SD of 100 for log(nu) translates to implausibly big odds ratios for doubled time.
+
+# nu <- exp(lognu)
+# lognu ~ dnorm(0, 0.0001)
+
+### MORE SENSIBLE PRIORS
+
+ meansurv ~ dunif(0, 720) # mean survival in months, up to 60 years
+ lambda <- 1 / meansurv
+ loghr ~ dunif(-4.6, 4.6) # log(1/100) to log(100) 
+ nu <- loghr / log(2) + 1
+ hr <- exp(loghr)         # for monitoring
+
+## for comparison with R survreg()
+ beta <- pow(lambda, -1/nu)
+ rintercept <- log(beta) # (Intercept) reported by survreg
+ rlogscale <- log(1/nu)  # Log(scale) reported by survreg summary() output
+} 

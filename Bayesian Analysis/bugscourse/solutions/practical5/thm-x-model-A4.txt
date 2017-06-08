@@ -1,0 +1,26 @@
+model {
+for (i in 1:Nobs){
+thm[i] ~ dnorm(theta[zone[i]], tau[zone[i]])    # likelihood for observed data
+}
+
+for (z in 1:Nzone){
+theta[z] ~ dnorm(mu, omega)    # zone-specific means (random effects)
+log.sigma2[z] <- alpha + beta * x[z]    # zone-specific log variances
+tau[z] <- 1/exp(log.sigma2[z])
+}
+
+# priors on random effects mean and SD
+mu ~ dnorm(0, 0.000001)
+# random effects SD (between-zone SD of mean THM)
+psi ~ dunif(0, 1000)
+psi2 <- pow(psi, 2)
+omega <- 1 / psi2
+
+alpha ~ dnorm(0, 0.00001)    # log variance for average residence time
+beta ~ dnorm(0, 0.00001)    # increase in log variance for unit increase in residence time
+mean.var <- exp(alpha)    # residual variance for zone with average residence time
+
+vpc <- psi2 / (psi2 + mean.var)    # average variance partition coefficient
+}
+
+

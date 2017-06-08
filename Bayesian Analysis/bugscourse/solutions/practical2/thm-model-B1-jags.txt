@@ -1,0 +1,17 @@
+model {
+tau <- 1/pow(5, 2)
+
+for (i in 1:2) {
+  y[i] ~ dnorm(theta, tau)
+}
+
+# informative prior
+theta ~ dnorm(120, prec)
+prec <- 1/100
+
+# predictions and probabilities
+ypred ~ dnorm(theta, tau)
+py.130 <- step(ypred - 130)    # indicator of whether ypred > 130
+pmean.130 <- step(theta - 130)    # indicator of whether zone mean > 130
+}
+

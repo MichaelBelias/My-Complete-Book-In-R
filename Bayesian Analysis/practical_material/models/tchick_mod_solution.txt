@@ -1,0 +1,6 @@
+model {
+ for (i in 1:6) {
+  y[i] ~ dnorm(mu, 1)T(,8)
+ }
+ mu ~ dunif(0, 10) 
+}

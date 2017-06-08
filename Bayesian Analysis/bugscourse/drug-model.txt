@@ -1,0 +1,8 @@
+# Drug example - model code
+
+model {
+theta ~ dbeta(a, b)    # prior distribution
+r ~ dbin(theta, n)    # sampling distribution
+r.pred ~ dbin(theta, m)    # predictive distribution
+P.crit <- step(r.pred - ncrit + 0.5)    # =1 if r.pred >= ncrit, 0 otherwise
+}

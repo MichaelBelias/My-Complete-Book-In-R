@@ -1,0 +1,6 @@
+#  Coins example:  repeated tosses of 10 balanced coins
+
+model {
+Y ~ dbin(0.7, 30)
+P15 <- step(15.5 - Y)    #  = 1 if Y is 15 or fewer
+}

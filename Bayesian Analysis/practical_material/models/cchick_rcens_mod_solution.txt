@@ -1,0 +1,9 @@
+model {
+      for (i in 1:6) {
+      	  y[i] ~ dnorm(mu, 1)I(low[i],upp[i])
+      }
+      for (i in 7:9) {
+      	  y[i] ~ dnorm(mu, 1)I(low[i],)
+      }
+     mu ~ dunif(0, 20)
+}

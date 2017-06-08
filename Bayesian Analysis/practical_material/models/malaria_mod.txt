@@ -1,0 +1,19 @@
+model{
+   for(i in 1:805) {
+      Y[i] ~ dbern(p[i])
+      logit(p[i]) <- alpha + beta[1]*(AGE[i] - mean(AGE[])) + beta[2]*BEDNET[i] +
+                                    beta[3]*(GREEN[i] - mean(GREEN[])) + beta[4]*PHC[i]
+
+### INSERT IMPUTATION MODEL HERE
+
+   }
+   # vague priors on regression coefficients of analysis model
+   alpha ~ dlogis(0, 1)
+   for (i in 1:4){
+    beta[i] ~ dt(0, 0.16, 1)
+    or[i] <- exp(beta[i])
+   }
+
+### PRIORS FOR IMPUTATION MODEL COEFFICIENTS HERE
+
+}

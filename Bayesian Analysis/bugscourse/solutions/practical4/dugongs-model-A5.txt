@@ -1,0 +1,17 @@
+model {
+for (i in 1:N){
+  Y[i] ~ dt(mu[i], tau, 4)
+  mu[i] <- alpha - beta * pow(gamma, x[i])
+
+  res[i] <- (Y[i] - mu[i]) / sigma    # standardised residuals
+  P.res[i] <- phi(res[i])    # p-value for res (note: not correct under this model, since residuals non-normal)
+  Y.pred[i] ~ dnorm(mu[i], tau)
+  P.pred[i]  <-  step(Y[i] - Y.pred[i])
+}
+alpha ~ dunif(0, 100)
+beta ~ dunif(0, 100)
+gamma ~ dunif(0, 1.0)
+
+tau ~ dgamma(0.001, 0.001)
+sigma <- sqrt(2/tau)    # standard deviation of t-4 errors
+}

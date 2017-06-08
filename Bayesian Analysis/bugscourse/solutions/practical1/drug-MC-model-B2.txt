@@ -1,0 +1,8 @@
+#  Monte Carlo predictions for Drug example
+
+model {
+# theta ~ dbeta(9.2, 13.8)    # old prior distribution
+theta ~ dunif(0, 1)    # prior distribution
+r ~ dbin(theta, 20)    # sampling distribution
+P.crit <- step(r - 14.5)    # =1 if r >= 15, 0 otherwise
+}

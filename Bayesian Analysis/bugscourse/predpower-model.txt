@@ -1,0 +1,11 @@
+# Predictive distribution of Power
+
+model {
+prec.sigma <- 1/(0.3 * 0.3)    # transform sd to precision = 1/sd2
+prec.theta <- 1/(0.1 * 0.1)
+sigma ~ dnorm(1, prec.sigma)I(0, )    # priors forced to be positive
+theta ~ dnorm(0.5, prec.theta)I(0, )
+n <- 2 * pow((0.84 + 1.96) * sigma / theta, 2)    # sample size for 80% ppower
+power <- phi(sqrt(63/2) * theta / sigma - 1.96)    # power for 63 per group
+prob70 <- step(power - 0.7)    # chance that power greater than 0.7
+}

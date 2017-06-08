@@ -1,0 +1,18 @@
+model {
+for (i in 1:N){
+  Y[i] ~ dnorm(mu[i], tau)
+  mu[i] <- alpha - beta * pow(gamma, x[i])
+}
+alpha ~ dunif(0, 100)
+beta ~ dunif(0, 100)
+gamma ~ dunif(0, 1)
+
+# note, can't have function on LHS of distribution, so not allowed to specify, e.g. log(sigma) ~ dunif(.....)
+log.sigma ~ dunif(-100, 100)
+
+# The following line can alternatively be supplied as log(sigma) <- log.sigma, which works because
+# functions can appear on left hand side of deterministic (<-) relationships
+sigma <- exp(log.sigma)
+
+tau <- 1/pow(sigma, 2)
+}

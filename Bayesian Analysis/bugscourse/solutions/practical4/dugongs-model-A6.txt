@@ -1,0 +1,17 @@
+model {
+for (i in 1:N){
+  Y[i] ~ dnorm(mu[i], tau)
+  mu[i] <- alpha - beta * x[i]
+
+  res[i] <- (Y[i] - mu[i]) / sigma
+  P.res[i] <- phi(res[i])
+  Y.pred[i] ~ dnorm(mu[i], tau)
+  P.pred[i]  <-  step(Y[i] - Y.pred[i])
+}
+alpha ~ dunif(0, 100)
+beta ~ dunif(0, 100)
+gamma ~ dunif(0, 1.0)    # leave in code as prior - won't affect rest of model
+
+tau ~ dgamma(0.001, 0.001)
+sigma <- 1 / sqrt(tau)    # standard deviation of Normal errors
+}

@@ -1,0 +1,14 @@
+model {
+ for (i in 1:5){
+  y[i] ~ dnorm(mu[i], tau)
+  mu[i] <- alpha + beta*t[i]
+ }
+ p20 <- step(20 - y[5])
+
+ ### INSERT PRIOR DISTRIBUTIONS HERE
+ alpha ~ ??
+ beta ~  ??
+ sigma ~ ??
+
+ tau <- 1/(sigma*sigma)
+}

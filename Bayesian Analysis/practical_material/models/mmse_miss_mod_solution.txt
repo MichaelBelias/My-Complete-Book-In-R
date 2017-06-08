@@ -1,0 +1,21 @@
+model {
+ for (i in 1:5){
+  y[i] ~ dnorm(mu[i], tau)
+#  y[i] ~ dt(mu[i], tau, 4) # alternative t errors for Part 4
+  mu[i] <- alpha + beta*t[i]
+
+  ## Model for missingness
+  miss[i] ~ dbern(p[i])
+  logit(p[i]) <- a - b*y[i]/5 # OR doubled (b=log(2)) if MMSE 5 units lower
+ }
+ p20 <- step(20 - y[5])
+
+ alpha ~ dunif(0, 30)
+ beta ~ dnorm(-10, 0.04)
+ sigma ~ dunif(0, 10)
+ tau <- 1/(sigma*sigma)
+
+ ## Priors for missingness model parameters
+ a ~ dlogis(0, 1)
+ b <- log(2) #
+}

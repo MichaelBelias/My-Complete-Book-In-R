@@ -1,0 +1,17 @@
+model {
+ for (i in 1:n) {
+  stop[i] ~ dweib(nu, lambda[i])T(start[i], )C(cens[i], )
+  log(lambda[i]) <- a[1] + a[2]*CD4[i]
+ }
+
+## Priors
+ meansurv ~ dunif(0, 720) # mean survival in months (up to 60 years) 
+ a[1] <- log(1/meansurv)
+ loghr ~ dunif(-4.6, 4.6) # HR from -100 to 100 
+ nu <- loghr / log(2) + 1
+ a[2] ~ dunif(-4.6, 4.6) # log HR for 1 unit of CD4
+ 
+ hr.time <- exp(nu)
+ hr.CD4 <- exp(a[2])
+ scale <- exp(a[1]) # reported by flexsurvreg with dist=\"weibullPH\"
+}
