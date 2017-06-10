@@ -155,6 +155,7 @@ outSep <- coda.samples(sep.jm,
 print(proc.time() - ptm)
 
 ## check traces
+dev.new()
 chkTraces(outSep, "^delta\\[.,.,2\\]")
 
 

@@ -630,6 +630,7 @@ dicFlu_popt
 
 ## Check traces for convergence - the string in the second argument is one that can be passed to the grep command to extract particular parameters from the mcmc.list
 chkTraces(outFlu, "^pi")
+dev.new()
 chkTraces(outFlu, "^N")
 chkTraces(outFlu, "^p\\[")
 chkTraces(outFlu, "^r")
