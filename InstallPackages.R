@@ -13,14 +13,15 @@ package_names= c("hglm","foreign","knitr","ggplot2","GGally","reshape2",
                  "lme4","compiler","metafor","sas7bdat","memisc","parallel",
                  "boot","nlme", "MASS","lme4","Rglpk","mvmeta","netmeta",
                  "gemtc", "msm","Formula","gems", "Epi", "simMSM","pander",
-                 "gemtc","coda", "ipdmeta","R2jags","ape","knitr",
+                 "gemtc","coda", "ipdmeta","R2jags","ape","knitr","ggmcmc",
                  "RCurl","XML","ips","RMySQL","svDialogs","Rphylip","rdrop2",
                  "xlsx","devtools","httpuv","png","grid","phytools","phangorn",
+                 "rstan","rstanarm","car","survival","corrplot","COUNT",
                  "knitr","diagram","stringi","metafor","bmeta")
 
 
 
-install_github("gforge/forestplot")
+
 
 ###Package installer and installation
 for(package_name in package_names)  

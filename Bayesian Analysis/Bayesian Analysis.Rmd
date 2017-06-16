@@ -808,7 +808,7 @@ As an example of a one-way ANOVA, we’ll look at the Plant Growth data in R.
 
 ```{r}
 data("PlantGrowth")
-?PlantGrowth
+
 head(PlantGrowth)
 
 ```
@@ -948,7 +948,7 @@ Let’s explore an example with two factors. We’ll use the Warpbreaks data set
 
 ```{r,echo=FALSE, comment=""}
 data("warpbreaks")
-?warpbreaks
+
 head(warpbreaks)
 ```
 
@@ -1745,7 +1745,6 @@ For an example of Poisson regression, we’ll use the badhealth data set from th
 ```{r,echo=FALSE, warning=FALSE, message=FALSE, comment=""}
 library("COUNT")
 data("badhealth")
-?badhealth
 head(badhealth)
 any(is.na(badhealth))
 ```
@@ -2100,7 +2099,7 @@ We can extend the linear model for the Leinhardt data on infant mortality by inc
 ```{r,echo=FALSE,comment=""}
 library("car")
 data("Leinhardt")
-?Leinhardt
+
 str(Leinhardt)
 
 pairs(Leinhardt)
