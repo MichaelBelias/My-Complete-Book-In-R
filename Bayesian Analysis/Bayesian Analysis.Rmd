@@ -3,6 +3,9 @@ title: "Bayesian Analysis"
 author: "Michael Belias"
 date: "April 20, 2017"
 output:
+  word_document:
+    toc: yes
+    toc_depth: '3'
   pdf_document:
     highlight: monochrome
     includes:
@@ -17,9 +20,6 @@ output:
     includes:
       in_header: headerlogo.tex
     theme: null
-  word_document:
-    toc: yes
-    toc_depth: '3'
 fontsize: 12pt
 csl: Harvard2.csl
 bibliography: citations.bib
