@@ -10,14 +10,14 @@ library("devtools",character.only=TRUE,quietly=TRUE,verbose=FALSE)
 
 
 package_names= c("hglm","foreign","knitr","caret","rstan","rstanarm","ggplot2","ggthemes","ggThemeAssist","GGally","reshape2",
-                 "lme4","nlme","compiler","metafor","sas7bdat","memisc","parallel",
-                 "boot","nlme", "MASS","lme4","Rglpk","mvmeta","netmeta",
-                 "gemtc", "msm","Formula","gems", "Epi", "simMSM","pander",
-                 "gemtc","coda", "ipdmeta","R2jags","ape","knitr","ggmcmc",
-                 "RCurl","XML","ips","RMySQL","svDialogs","Rphylip",
-                 "xlsx","devtools","httpuv","png","grid","phytools","phangorn",
-                 "car","survival","corrplot","COUNT",
-                 "knitr","diagram","stringi","metafor","rdrop2")
+                 "lme4","nlme","compiler","metafor","sas7bdat","memisc","parallel","plyr",
+                 "boot","nlme", "MASS","lme4","Rglpk","mvmeta","netmeta","reshape2",
+                 "gemtc", "msm","Formula","gems", "Epi", "simMSM","pander","zoo",
+                 "gemtc","coda", "ipdmeta","R2jags","ape","knitr","ggmcmc","data.table",
+                 "RCurl","XML","ips","RMySQL","svDialogs","Rphylip","stringr","RColorBrewer",
+                 "xlsx","devtools","httpuv","png","grid","phytools","phangorn","choroplethr",
+                 "car","survival","corrplot","COUNT","ggpubr","XML","RSQLite","rbenchmark",
+                 "knitr","diagram","stringi","metafor","rdrop2","bit64","maps")
 
 
 
