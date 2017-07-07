@@ -237,7 +237,7 @@ summary(as.mcmc(post))
 
 ## ------------------------------------------------------------------------
 data("PlantGrowth")
-?PlantGrowth
+
 head(PlantGrowth)
 
 
@@ -323,7 +323,7 @@ mean(mod_csim[,3] > 1.1*mod_csim[,1])
 
 ## ----echo=FALSE, comment=""----------------------------------------------
 data("warpbreaks")
-?warpbreaks
+
 head(warpbreaks)
 
 ## ----echo=FALSE, comment=""----------------------------------------------
@@ -833,7 +833,6 @@ sum(diag(tab0.3)) / sum(tab0.3)
 ## ----echo=FALSE, warning=FALSE, message=FALSE, comment=""----------------
 library("COUNT")
 data("badhealth")
-?badhealth
 head(badhealth)
 any(is.na(badhealth))
 
@@ -1066,7 +1065,7 @@ summary(mod_sim)
 ## ----echo=FALSE,comment=""-----------------------------------------------
 library("car")
 data("Leinhardt")
-?Leinhardt
+
 str(Leinhardt)
 
 pairs(Leinhardt)
@@ -1121,8 +1120,7 @@ mod_sim = coda.samples(model=mod,
 
 mod_csim = as.mcmc(do.call(rbind, mod_sim)) # combine multiple chains
 
-par(mar = rep(3, 5))
-
+par(mar = rep(3, 4))
 ## convergence diagnostics
 plot(mod_sim)
 
