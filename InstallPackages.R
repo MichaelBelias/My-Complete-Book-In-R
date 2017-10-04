@@ -9,7 +9,8 @@ if(!is_installed("devtools"))
 library("devtools",character.only=TRUE,quietly=TRUE,verbose=FALSE) 
 
 
-package_names= c("hglm","foreign","knitr","caret","rstan","rstanarm","ggplot2","ggthemes","ggThemeAssist","GGally","reshape2",
+package_names= c("hglm","foreign","knitr","caret","rstan","rstanarm","ggplot2","ggthemes",
+                 "ggThemeAssist","GGally","reshape2","mice", "VIM" ,
                  "lme4","nlme","compiler","metafor","sas7bdat","memisc","parallel","plyr",
                  "boot","nlme", "MASS","lme4","Rglpk","mvmeta","netmeta","reshape2",
                  "gemtc", "msm","Formula","gems", "Epi", "simMSM","pander","zoo",
