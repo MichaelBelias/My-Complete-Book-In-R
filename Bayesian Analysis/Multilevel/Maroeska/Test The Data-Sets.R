@@ -3,7 +3,7 @@ library(metafor)
 
 ## Load the Data 
 library(haven)
-IPDMA <- read_sas("~/Desktop/Statistics/My-Complete-Book-In-R/Bayesian Analysis/Multilevel/Maroeska/IPDMA.sas7bdat")
+IPDMA <- read_sas("/home/mike/Documents/My-Complete-Book-In-R/Bayesian Analysis/Multilevel/Maroeska/IPDMA.sas7bdat")
 head(IPDMA)
 
 
@@ -15,7 +15,7 @@ IPDMA$AGED = (IPDMA$AGED -1 )^2
 summary(IPDMA)
 
 
-Baseline=matrix(nrow=32
+Baseline=matrix(nrow=33
                 ,ncol = 3
                 ,dimnames = list(names(IPDMA), c("Control","Treatment","Total")))
 
@@ -184,7 +184,7 @@ exp(summary(dat))
 
 
 #### Interaction
-fit= glm(formula = OUTCOME~TREAT+ BILAT_0*AGE, data= IPDMA, family = binomial)
+fit= glm(formula = OUTCOME~TREAT *AGED* BILAT_0 , data= IPDMA, family = binomial)
 ### ??
 summary(fit)
 ###
@@ -230,7 +230,7 @@ exp(summary(dat))
 fit= glm(formula = OUTCOME~TREAT, 
          data= IPDMA[which(IPDMA$OTO_0 == 0),], 
          family = poisson)
-
+summary()
 exp(-coef(fit))
 
 
@@ -276,12 +276,27 @@ summary(fit)
 
 ### Pain at 3–7 days 2x2 Matrix Age Interaction
 
-fit= glm(formula = OUTCOME~TREAT*AGED , data= IPDMA,
+fit= glm(formula = PAIN_2~TREAT*AGED , data= IPDMA,
          family = binomial)
 
 summary(fit)
 exp(-coef(fit))
 
 
+### Pain at 3–7 days 2x2 Matrix Age Interaction
 
+fit= glm(formula = PAIN_2~TREAT*BILAT_0 , data= IPDMA,
+         family = binomial)
+
+summary(fit)
+exp(-coef(fit))
+
+
+### Pain at 3–7 days 2x2 Matrix Age Interaction
+
+fit= glm(formula = PAIN_2~TREAT* BILAT_0 + TREAT* AGED+ I(BILAT_0*TREAT* AGED)   , data= IPDMA,
+         family = binomial)
+
+summary(fit)
+exp(-coef(fit))
 

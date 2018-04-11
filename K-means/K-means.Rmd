@@ -46,7 +46,7 @@ This definition is not so precise that is why *clustering* can be approached by 
 Our data came from the UCI Machine Learning repository, the name of the Data-Set is seed and it contains values of 3 kinds of Wheat Seeds Kama, Rosa and Canadian. 
 
 
-```{r,echo=FALSE}
+```{r}
 library(pander)
 
 df<- read.table("F:/My Complete Book In R/K-means/k-means.txt")
@@ -72,7 +72,7 @@ The first question we want to answer is how many clusters shall we keep?
 A nice approach is to check the within group sum of squares for each k (number of Centroids), plot them and with the *elbow method* spot the point where the sum of squares is not decreasing quickly. 
 We can easily build a function for that.
 
-```{r,echo=FALSE}
+```{r}
 df1 <- scale(df[-8]) 
 wssplot <- function(data, nc=15, seed=697){
                wss <- (nrow(data)-1)*sum(apply(data,2,var))
@@ -92,7 +92,7 @@ With the elbow method we can easily suggest the use of 3 centroids.
 
 There is also the **NbClust** function in the **NbClust** library. 
 
-```{r,comment="",echo=FALSE, message=FALSE}
+```{r,comment="", message=FALSE}
 library(NbClust)
 set.seed(6970222)
 
@@ -102,7 +102,7 @@ pander(table(nc$Best.n[1,]), caption = "")
 ```
 
 
-```{r ,echo=FALSE, message=FALSE}
+```{r , message=FALSE}
 
 library(ggplot2)
 
@@ -120,7 +120,7 @@ Last step is to scale (Standardise the Data) the Data-Set in order to get better
 
 The function for the k-means in R is *kmeans*.
 
-```{r,comment="",echo=FALSE, message=FALSE}
+```{r,comment="", message=FALSE}
 set.seed(6970222)
 df1 <- scale(df[-8]) 
 kmeans.result <- kmeans(x = df[,-8],centers = 3)
@@ -128,7 +128,7 @@ table(df$species, kmeans.result$cluster)
 ```
 
 
-```{r,comment="",echo=FALSE, message=FALSE}
+```{r,comment="", message=FALSE}
 library(scatterplot3d)
 
 scatterplot3d(x = df$kernel.length,

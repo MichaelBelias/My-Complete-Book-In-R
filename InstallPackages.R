@@ -9,16 +9,18 @@ if(!is_installed("devtools"))
 library("devtools",character.only=TRUE,quietly=TRUE,verbose=FALSE) 
 
 
-package_names= c("hglm","foreign","knitr","caret","rstan","rstanarm","ggplot2","ggthemes",
+package_names= c("hglm","foreign","knitr","caret","ggplot2","ggthemes",
                  "ggThemeAssist","GGally","reshape2","mice", "VIM" ,
                  "lme4","nlme","compiler","metafor","sas7bdat","memisc","parallel","plyr",
-                 "boot","nlme", "MASS","lme4","Rglpk","mvmeta","netmeta","reshape2",
-                 "gemtc", "msm","Formula","gems", "Epi", "simMSM","pander","zoo",
-                 "gemtc","coda", "ipdmeta","R2jags","ape","knitr","ggmcmc","data.table",
+                 "boot","nlme", "MASS","lme4","mvmeta",
+                 "msm","Formula","gems", "Epi", "simMSM","pander","zoo",
+                 "coda", "ipdmeta","ape","knitr","ggmcmc","data.table",
                  "RCurl","XML","ips","RMySQL","svDialogs","Rphylip","stringr","RColorBrewer",
-                 "xlsx","devtools","httpuv","png","grid","phytools","phangorn","choroplethr",
+                 "devtools","httpuv","png","grid","phytools","phangorn","choroplethr",
                  "car","survival","corrplot","COUNT","ggpubr","XML","RSQLite","rbenchmark",
-                 "knitr","diagram","stringi","metafor","rdrop2","bit64","maps")
+                 "knitr","diagram","stringi","metafor",
+                 "xlsx","R2jags","rdrop2","gemtc","reshape2","netmeta",
+                 "Rglpk","bit64","maps","rstan","rstanarm")
 
 
 
