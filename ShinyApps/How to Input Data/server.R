@@ -1,6 +1,7 @@
 library(foreign)
 library(readr)
 library(haven)
+library(readxl)
 library(xlsx)
 
 shinyServer(function(input, output) {

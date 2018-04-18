@@ -1,7 +1,7 @@
 ## take a look at the samples and compare with results computed 
 ## in other program. 
 
-
+library(rstan)
 library(coda) 
 library(RCurl)
 

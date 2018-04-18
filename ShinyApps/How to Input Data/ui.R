@@ -38,6 +38,7 @@ shinyUI(pageWithSidebar(
       # Advanced functions:
       "read.xlsx",
       "read.xlsx2",
+      "read_excel",
       "scan",
       "readLines"
     )),
