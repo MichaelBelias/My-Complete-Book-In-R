@@ -3,7 +3,7 @@ library(shiny)
 shinyServer(function(input, output) {
 
 
-  n.sim <- 1000
+  n.sim <- 10000
   
   draw.sample <- reactive({
     
@@ -31,7 +31,7 @@ shinyServer(function(input, output) {
     
     sample <- draw.sample()
     plot.title <- sprintf("Power: %.2f; Proportion rejected nulls: %.2f", sample$power, sample$sig.rate)
-    hist(sample$t.stats, 25, col="dodgerblue", main=plot.title, xlab="t statistics")
+    hist(sample$t.stats, 40, col="dodgerblue", main=plot.title, xlab="t statistics")
     abline(v=qt(0.05, sample$df, lower.tail=FALSE), lwd=5)
     
   })

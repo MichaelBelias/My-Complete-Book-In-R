@@ -3,7 +3,7 @@
 ########################################
 
 # (a)-(i): Read the famous Stanford heart transplant data set in R
-stanford = read.csv("C:/Applied_Survival_Analysis_Jan2016/lab9/data/stanford.csv")
+stanford = read.csv("Survival Analysis/R labs/lab9/data/stanford.csv")
 head(stanford)
 
 # Fit a naive Cox model
@@ -68,7 +68,7 @@ summary(fitCox)
 ##############################
 
 # Leukemia Data
-leukem <- read.csv("C:/Applied_Survival_Analysis_Jan2016/lab3/data/leukem.csv")
+leukem <- read.csv("./Survival Analysis/R labs/lab3/data/leukem.csv")
 leukem[1:4,]
 
 # Encode trt as a factor
@@ -103,3 +103,6 @@ leukem$trt = 1*(leukem$trt == "6-MP")
 fit = coxph( Surv(weeks,remiss) ~ trt + tt(trt),data = leukem, 
              tt = function(x,t,...){x*t})
 summary(fit)
+
+
+ggcoxdiagnostics(fit)
