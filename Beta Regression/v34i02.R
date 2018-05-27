@@ -1,8 +1,32 @@
 ###################################################
 ## Preliminaries
 ###################################################
-options(width = 70, prompt = "R> ", continue = "+  ")
+
 library("betareg")
+
+logitTransform <- function(p) { log(p/(1-p)) }
+asinTransform <- function(p) { 2*asin(sqrt(p)) }
+
+p <- seq(0.001, 0.999, length.out = 1000)
+pLogit <- logitTransform(p)
+plot(pLogit, p, type='l', lwd=2, col='red', las=1, ylab='p', xlab='logit(p)')
+pAsin <- asinTransform(p)
+plot(pAsin,p,  type='l', lwd=2, col='blue', 
+     las=1, ylab='p', xlab='arcsine(p)', 
+     main = "Two times arcsine - square root transformation of proportion")
+
+
+rangeScale <- function(x) { (x-min(x)) / (max(x)-min(x)) }
+
+pAsin.scaled <- rangeScale(pAsin)
+pLogit.scaled <- rangeScale(pLogit)
+
+plot( pAsin.scaled, p, las=1, type='l', lwd=2, col='blue', ylab='p', xlab='p transformed', 
+      main = "Comparison of arcsine and logit transformation", sub = "Scaled into 0-1")
+points(pLogit.scaled, p,  type='l', lwd=2, col='red')
+text(0.8, 0.8, 'asin', col='blue')
+text(0.5, 0.8, 'logit', col='red')
+
 
 ###################################################
 ## Section 1: Introduction
@@ -58,11 +82,14 @@ summary(gy_logit)
 gy_loglog <- betareg(yield ~ batch + temp, data = GasolineYield,
   link = "loglog")
 
+gy_logit2 <- lm(qlogis(yield) ~ batch + temp, data = GasolineYield)
+
+
 ## Visualization of data and models
 par(mfrow = c(1, 1), mar = c(5.1, 4.1, 4.1, 2.1))
 redblue <- hcl(c(0, 260), 90, 40)
 plot(yield ~ temp, data = GasolineYield, type = "n",
-  ylab = "Proportion of crude oil converted to gasoline",
+  ylab = "Proportion of crude oil converted to gasoline", 
   xlab = "Temperature at which all gasoline has vaporized",
   main = "Prater's gasoline yield data")
 points(yield ~ temp, data = GasolineYield, cex = 1.75, 
@@ -77,8 +104,10 @@ lines(150:500, predict(gy_logit,
 lines(150:500, predict(gy_loglog, 
   newdata = data.frame(temp = 150:500, batch = "6")),
   col = redblue[1], lwd = 2)
-legend("bottomright", c("log-log", "logit"),
-  col = redblue, lty = 1:2, lwd = 2, bty = "n")
+lines(150:500, plogis(predict(gy_logit2, 
+                       newdata = data.frame(temp = 150:500, batch = "6"))),col = "green", lwd = 2)
+legend("bottomright", c("log-log", "logit", "logit-transformation"),
+  col = c("red","blue","green"), lty = 1:2, lwd = 2, bty = "n")
 
 ## Omitting influential observation #4
 gy_logit4 <- update(gy_logit, subset = -4)
