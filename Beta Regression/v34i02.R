@@ -2,7 +2,12 @@
 ## Preliminaries
 ###################################################
 
-library("betareg")
+
+if(!require(betareg)) install.packages(betareg)
+if(!require(ggsci)) install.packages(ggsci)
+if(!require(lmtest)) install.packages(lmtest)
+if(!require(lme4)) install.packages(lme4)
+if(!require(strucchange)) install.packages(strucchange)
 
 logitTransform <- function(p) { log(p/(1-p)) }
 asinTransform <- function(p) { 2*asin(sqrt(p)) }
@@ -130,6 +135,13 @@ data("FoodExpenditure", package = "betareg")
 
 ## OLS regression
 fe_lm <- lm(I(food/income) ~ income + persons, data = FoodExpenditure)
+par(mfrow=c(2,2))
+plot(fe_lm)
+## OLS regression
+
+fe_lmer <- lmer(I(food/income) ~ income + persons + (1|persons), data = FoodExpenditure)
+summary(fe_lmer)
+
 
 ## Beta regression
 fe_beta <- betareg(I(food/income) ~ income + persons,
@@ -138,6 +150,9 @@ fe_beta <- betareg(I(food/income) ~ income + persons,
 ## Beta regression with variable dispersion (for visualization)
 fe_beta2 <- betareg(I(food/income) ~ income + persons | persons,
   data = FoodExpenditure)
+plot(fe_beta2)
+
+
 
 ## Visualization of data and models
 par(mfrow = c(1, 1), mar = c(5.1, 4.1, 4.1, 2.1))
@@ -165,7 +180,7 @@ legend("topright", c("logit, var. disp.", "logit, fix. disp.", "lm"),
   col = redblueblack, lty = c(1, 5, 2), lwd = 2, bty = "n")
 
 ## Breusch-Pagan test for heteroskedasticity in OLS regression
-library("lmtest")
+
 bptest(fe_lm)
 
 
@@ -221,10 +236,28 @@ data("ReadingSkills", package = "betareg")
 rs_ols <- lm(qlogis(accuracy) ~ dyslexia * iq, data = ReadingSkills)
 coeftest(rs_ols)
 
+rs_arsine <- lm(asin(sqrt(accuracy)) ~ dyslexia * iq, data = ReadingSkills)
+coeftest(rs_arsine)
+sin_square <- function(x) sin(x)^2
+
 ## Beta regression with variable dispersion
-rs_beta <- betareg(accuracy ~ dyslexia * iq | dyslexia + iq,
-  data = ReadingSkills, hessian = TRUE)
+rs_beta <- betareg(accuracy ~ dyslexia * iq | dyslexia * iq ,
+                   data = ReadingSkills, hessian = TRUE)
 coeftest(rs_beta)
+
+
+## Beta regression without variable dispersion
+rs_beta_fixed <- betareg(accuracy ~ dyslexia * iq ,
+                   data = ReadingSkills, hessian = TRUE)
+coeftest(rs_beta_fixed)
+
+
+rs_ols_lmer <- lmer(qlogis(accuracy) ~ dyslexia * iq  +(iq|dyslexia) , data = ReadingSkills)
+summary(rs_ols_lmer)
+coeftest(rs_beta)
+
+
+
 
 ## Visualization of data and models
 par(mfrow = c(1, 1), mar = c(5.1, 4.1, 4.1, 2.1))
@@ -232,21 +265,41 @@ cl1 <- hcl(c(260, 0), 90, 40)
 cl2 <- hcl(c(260, 0), 10, 95)
 plot(accuracy ~ iq, data = ReadingSkills, col = cl2[as.numeric(dyslexia)],
   main = "Reading skills data", xlab = "IQ score", ylab = "Reading accuracy",
-  pch = c(19, 17)[as.numeric(dyslexia)], cex = 1.5)
+  pch = c(19, 17)[as.numeric(dyslexia)], cex = 1.5 , sub =  "Figure 1")
 points(accuracy ~ iq, data = ReadingSkills, cex = 1.5,
   pch = (1:2)[as.numeric(dyslexia)], col = cl1[as.numeric(dyslexia)])
-nd <- data.frame(dyslexia = "no", iq = -30:30/10)
-lines(nd$iq, predict(rs_beta, nd), col = cl1[1], lwd = 2)
-lines(nd$iq, plogis(predict(rs_ols, nd)), col = cl1[1], lty = 2, lwd = 2)
-nd <- data.frame(dyslexia = "yes", iq = -30:30/10)
-lines(nd$iq, predict(rs_beta, nd), col = cl1[2], lwd = 2)
-lines(nd$iq, plogis(predict(rs_ols, nd)), col = cl1[2], lty = 2, lwd = 2)
-legend("topleft", c("control", "dyslexic", "betareg", "lm"),
-  lty = c(NA, NA, 1:2), pch = c(19, 17, NA, NA), lwd = 2,
-  col = c(cl2, 1, 1), bty = "n")
-legend("topleft", c("control", "dyslexic", "betareg", "lm"),
-  lty = c(NA, NA, 1:2), pch = c(1, 2, NA, NA),
-  col = c(cl1, NA, NA), bty = "n")
+nd1 <- data.frame(dyslexia = "no", iq = -30:30/10)
+lines(nd1$iq, predict(rs_beta, nd1), col = cl1[1], lwd = 2)
+lines(nd1$iq, plogis(predict(rs_ols, nd1)), col = cl1[1], lty = 2, lwd = 2)
+lines(nd1$iq, sin_square(predict(rs_arsine, nd1)), col = cl1[1],lty = 3, lwd = 2)
+nd2 <- data.frame(dyslexia = "yes", iq = -30:30/10)
+lines(nd2$iq, predict(rs_beta, nd2), col = cl1[2], lwd = 2)
+lines(nd2$iq, plogis(predict(rs_ols, nd2)), col = cl1[2], lty = 2, lwd = 2)
+lines(nd2$iq, sin_square(predict(rs_arsine, nd2)), col = cl1[2], lty = 3, lwd = 2)
+legend("topleft", c("control", "dyslexic", "betareg", "logistic","arcsine"),
+  lty = c(NA, NA, 1:3), pch = c(19, 17, NA, NA,NA), lwd = 2,
+  col = c(cl1[1],cl2[2], "black", "black","black"), bty = "n")
+
+
+
+ggplot(ReadingSkills, aes(x = iq, y = accuracy)) +
+  geom_point(size = 4, aes(fill = dyslexia), shape = 21) +
+  scale_fill_lancet() +
+  geom_line(data = ReadingSkills[ReadingSkills$dyslexia=="yes",],aes(y = predict(rs_beta,ReadingSkills[ReadingSkills$dyslexia=="yes",]),
+                colour = "red", linetype = "beta-reg"),size = 1) +
+  geom_line(data = ReadingSkills[ReadingSkills$dyslexia=="yes",],
+            aes(y = plogis(predict(rs_ols, ReadingSkills[ReadingSkills$dyslexia=="yes",])), 
+                colour = "red", linetype = "OLS"),size = 1)+
+  geom_line(data = ReadingSkills[ReadingSkills$dyslexia=="no",],
+            aes(y = predict(rs_beta,ReadingSkills[ReadingSkills$dyslexia=="no",]),
+            colour = "blue", linetype = "beta-reg"),size = 1) +
+  geom_line(data = ReadingSkills[ReadingSkills$dyslexia=="no",],
+            aes(y = plogis(predict(rs_ols, ReadingSkills[ReadingSkills$dyslexia=="no",])), 
+            colour = "blue", linetype = "OLS"),size = 1)  +
+  scale_colour_manual("", values = c("blue", "red")) +
+  scale_linetype_manual("", values = c("solid", "dashed")) +
+  theme_bw()
+
 
 
 ###################################################
@@ -258,7 +311,7 @@ y1 <- c(rbeta(150, 0.3 * 4, 0.7 * 4), rbeta(50, 0.5 * 4, 0.5 * 4))
 y2 <- c(rbeta(100, 0.3 * 4, 0.7 * 4), rbeta(100, 0.3 * 8, 0.7 * 8))
 
 ## Generalized empirical fluctuation processes
-library("strucchange")
+
 y1_gefp <- gefp(y1 ~ 1, fit = betareg)
 y2_gefp <- gefp(y2 ~ 1, fit = betareg)
 
