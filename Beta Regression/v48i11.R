@@ -55,7 +55,7 @@ nd <- data.frame(dyslexia = "no", iq = -30:30/10)
 lines(nd$iq, predict(rs_beta, nd), col = cl1[1], lty = 1, lwd = 2)
 lines(nd$iq, predict(rs_bc, nd), col = cl1[1], lty = 2, lwd = 2)
 lines(nd$iq, plogis(predict(rs_ols, nd)), col = "purple", lty = 1, lwd = 2)
-lines(nd$iq, plogis(predict(rs_ols, nd)), col = "white", lty = 4, lwd = 2)
+lines(nd$iq, plogis(predict(rs_ols, nd)), col = "white", lty = 3, lwd = 2)
 nd <- data.frame(dyslexia = "yes", iq = -30:30/10)
 lines(nd$iq, predict(rs_beta, nd), col = cl1[2], lty = 1, lwd = 2)
 lines(nd$iq, predict(rs_bc, nd), col = cl1[2], lty = 2, lwd = 2)
@@ -63,7 +63,7 @@ lines(nd$iq, plogis(predict(rs_ols, nd)), col = "purple", lty = 1, lwd = 2)
 lines(nd$iq, plogis(predict(rs_ols, nd)), col = "white", lty = 4, lwd = 2)
 legend("topleft", c("control", "dyslexic", "betareg","Bias corrected","logit"),
        lty = c(NA, NA, 1:3), pch = c(19, 17, NA, NA,NA,NA), lwd = 2,
-       col = c(cl2, 1, 1,1,"purple"), bty = "n")
+       col = c(cl2, 1, 1,"purple"), bty = "n")
 legend("topleft", c("control", "dyslexic","betareg","Bias corrected","logit"),
        lty = c(NA, NA, 1:3), pch = c(1, 2, NA, NA,NA,NA),
        col = c(cl1, NA, NA,NA,"white"), bty = "n")
@@ -103,7 +103,7 @@ coef(rs_tree)
 rs_tree
 sctest(rs_tree)
 
-rs_tree <- betatree(accuracy ~ iq | iq | dyslexia +x1 ,
+rs_tree <- betatree(accuracy ~ iq | iq | dyslexia  ,
                     data = ReadingSkills, minsize = 10)
 plot(rs_tree)
 
@@ -112,7 +112,7 @@ plot(rs_tree)
 ## beta regression mixture model
 rs_mix <- betamix(accuracy ~ iq, data = ReadingSkills, k = 3,
   extra_components = extraComponent(type = "uniform",
-    coef = 0.99, delta = 0.01), nstart = 10)
+    coef = 0.99, delta = 0.01), nstart = 100)
 rs_mix
 summary(rs_mix)
 table(clusters(rs_mix), ReadingSkills$dyslexia)
