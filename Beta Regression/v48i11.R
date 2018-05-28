@@ -21,11 +21,9 @@ points(accuracy ~ iq, data = ReadingSkills, cex = 1.5,
   pch = (1:2)[as.numeric(dyslexia)], col = cl1[as.numeric(dyslexia)])
 nd <- data.frame(dyslexia = "no", iq = -30:30/10)
 lines(nd$iq, predict(rs_beta, nd), col = cl1[1], lwd = 2)
-lines(nd$iq, predict(rs_bc, nd), col = "green", lwd = 2)
 lines(nd$iq, plogis(predict(rs_ols, nd)), col = cl1[1], lty = 2, lwd = 2)
 nd <- data.frame(dyslexia = "yes", iq = -30:30/10)
 lines(nd$iq, predict(rs_beta, nd), col = cl1[2], lwd = 2)
-lines(nd$iq, predict(rs_bc, nd), col = "green", lwd = 2)
 lines(nd$iq, plogis(predict(rs_ols, nd)), col = cl1[2], lty = 2, lwd = 2)
 legend("topleft", c("control", "dyslexic", "betareg", "lm"),
   lty = c(NA, NA, 1:2), pch = c(19, 17, NA, NA), lwd = 2,
@@ -56,21 +54,19 @@ points(accuracy ~ iq, data = ReadingSkills, cex = 1.5,
 nd <- data.frame(dyslexia = "no", iq = -30:30/10)
 lines(nd$iq, predict(rs_beta, nd), col = cl1[1], lty = 1, lwd = 2)
 lines(nd$iq, predict(rs_bc, nd), col = cl1[1], lty = 2, lwd = 2)
-lines(nd$iq, predict(rs_br, nd), col = cl1[1], lty = 3, lwd = 2)
 lines(nd$iq, plogis(predict(rs_ols, nd)), col = "purple", lty = 1, lwd = 2)
 lines(nd$iq, plogis(predict(rs_ols, nd)), col = "white", lty = 4, lwd = 2)
 nd <- data.frame(dyslexia = "yes", iq = -30:30/10)
 lines(nd$iq, predict(rs_beta, nd), col = cl1[2], lty = 1, lwd = 2)
 lines(nd$iq, predict(rs_bc, nd), col = cl1[2], lty = 2, lwd = 2)
-lines(nd$iq, predict(rs_br, nd), col = cl1[2], lty = 3, lwd = 2)
 lines(nd$iq, plogis(predict(rs_ols, nd)), col = "purple", lty = 1, lwd = 2)
 lines(nd$iq, plogis(predict(rs_ols, nd)), col = "white", lty = 4, lwd = 2)
-legend("topleft", c("control", "dyslexic", "betareg","Bias corrected","Bias reduced", "lm"),
-       lty = c(NA, NA, 1:4), pch = c(19, 17, NA, NA,NA,NA), lwd = 2,
-       col = c(cl2, 1, 1,1,1,1), bty = "n")
-legend("topleft", c("control", "dyslexic","betareg","Bias corrected","Bias reduced", "lm"),
-       lty = c(NA, NA, 1:3, 1), pch = c(1, 2, NA, NA,NA,NA),
-       col = c(cl1, NA, NA,NA,"purple"), bty = "n")
+legend("topleft", c("control", "dyslexic", "betareg","Bias corrected","logit"),
+       lty = c(NA, NA, 1:3), pch = c(19, 17, NA, NA,NA,NA), lwd = 2,
+       col = c(cl2, 1, 1,1,"purple"), bty = "n")
+legend("topleft", c("control", "dyslexic","betareg","Bias corrected","logit"),
+       lty = c(NA, NA, 1:3), pch = c(1, 2, NA, NA,NA,NA),
+       col = c(cl1, NA, NA,NA,"white"), bty = "n")
 
 
 
@@ -95,17 +91,22 @@ pairs(log(pr_phi), panel = function(x, y, ...) {
 ## additional random covariates without assocation to response
 set.seed(1071)
 n <- nrow(ReadingSkills)
-ReadingSkills$x1 <- rnorm(n)
+ReadingSkills$x1 <- as.numeric(ReadingSkills$accuracy>0.9 &ReadingSkills$dyslexia==1 )
 ReadingSkills$x2 <- runif(n)
 ReadingSkills$x3 <- factor(sample(0:1, n, replace = TRUE))
 
 ## beta regression tree
 rs_tree <- betatree(accuracy ~ iq | iq, ~ dyslexia ,
-  data = ReadingSkills, minsplit = 10)
+  data = ReadingSkills, minsplit = 2 )
 plot(rs_tree)
 coef(rs_tree)
 rs_tree
 sctest(rs_tree)
+
+rs_tree <- betatree(accuracy ~ iq | iq | dyslexia +x1 ,
+                    data = ReadingSkills, minsize = 10)
+plot(rs_tree)
+
 
 
 ## beta regression mixture model

@@ -276,10 +276,12 @@ nd2 <- data.frame(dyslexia = "yes", iq = -30:30/10)
 lines(nd2$iq, predict(rs_beta, nd2), col = cl1[2], lwd = 2)
 lines(nd2$iq, plogis(predict(rs_ols, nd2)), col = cl1[2], lty = 2, lwd = 2)
 lines(nd2$iq, sin_square(predict(rs_arsine, nd2)), col = cl1[2], lty = 3, lwd = 2)
-legend("topleft", c("control", "dyslexic", "betareg", "logistic","arcsine"),
+legend("topleft", c("control", "dyslexic", "betareg", "logit","arcsine"),
   lty = c(NA, NA, 1:3), pch = c(19, 17, NA, NA,NA), lwd = 2,
   col = c(cl1[1],cl2[2], "black", "black","black"), bty = "n")
-
+legend("topleft", c("control", "dyslexic","betareg", "logit","arcsine"),
+       lty = c(NA, NA, 1:3), pch = c(1, 2, NA, NA,NA),
+       col = c(cl1, NA, NA,NA), bty = "n")
 
 
 ggplot(ReadingSkills, aes(x = iq, y = accuracy)) +
