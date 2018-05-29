@@ -117,13 +117,16 @@ rs_mix
 summary(rs_mix)
 table(clusters(rs_mix), ReadingSkills$dyslexia)
 
+
+
+
 ## visualization
 par(mfrow = c(1, 2))
 ix <- as.numeric(ReadingSkills$dyslexia)
 prob <- 2 * (posterior(rs_mix)[cbind(seq_along(ix), clusters(rs_mix))] - 0.5)
-col3 <- hcl(c(0, 260, 130), 65, 45, fixup = FALSE)
+col3 <- c("red","blue","green")
 col1 <- col3[clusters(rs_mix)]
-col2 <- hcl(c(0, 260, 130)[clusters(rs_mix)], 65 * abs(prob)^1.5, 95 - 50 * abs(prob)^1.5, fixup = FALSE)
+col2 <- hcl(c(0, 260, 130)[clusters(rs_mix)])
 plot(accuracy ~ iq, data = ReadingSkills, col = col2, pch = 19, cex = 1.5,
   xlim = c(-2, 2), main = "Mixture model (dyslexia unobserved)")
 points(accuracy ~ iq, data = ReadingSkills, cex = 1.5, pch = 1, col = col1)
